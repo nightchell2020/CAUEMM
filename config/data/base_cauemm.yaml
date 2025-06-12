@@ -1,0 +1,26 @@
+# base configuration of CAUEegMriMulti-modal
+dataset_name: cauemm-dataset
+dataset_path: /media/night/dawn/brain/
+eeg_file_format: memmap
+mri_file_format: nii
+crop_multiple: 1
+test_crop_multiple: 4
+crop_timing_analysis: false
+load_event: false
+
+# preprocessing eeg_configuration
+sampling_rate: 200
+seq_length: 2048 # 20000  # 200Hz * 10s = 2000 for base
+latency: 2000
+signal_length_limit: 10000000  # A sufficiently large number for no effect
+EKG: O
+photic: X
+input_norm: datapoint # dataset
+
+# preprocessing mri_configuration
+resize: 64
+
+# augmentation configuration
+awgn: 0.001
+awgn_age: 0.001
+mgn: 0.001

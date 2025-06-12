@@ -1,0 +1,18 @@
+defaults:
+  - base_train
+  - _self_
+
+# Training iteration
+search_lr: false
+total_samples: 50000
+
+# log
+num_history: 5
+save_model: false
+
+# wandb
+#use_wandb: true
+use_wandb: false
+draw_result: false
+watch_model: false
+

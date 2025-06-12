@@ -1,0 +1,10 @@
+defaults:
+  - base_model
+  - WKCNN
+  - _self_
+
+_target_: models.wkcnn.WideKernelCNN
+model: ???
+middle: 10000
+block : basic
+minibatch_3090: 512

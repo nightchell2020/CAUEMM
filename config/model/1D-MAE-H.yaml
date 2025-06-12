@@ -1,0 +1,19 @@
+defaults:
+  - base_model
+  - _self_
+
+_target_: models.mae_1d_IL.mae_1d_h_e1280_d512
+model: 1D-MAE-H
+
+norm_pix_loss: False
+activation: gelu
+minibatch_3090: 192
+#
+#mask_ratio: ???
+#patch_size: ???
+#use_age: ???
+mask_ratio: 0.5
+patch_size: 8
+use_age: "no"
+fc_stages: 2
+in_channels: 10

@@ -1,0 +1,11 @@
+defaults:
+  - data: caueeg-abnormal
+#  - trainer: base_test
+  - trainer: tiny-train
+#  - trainer: base_train
+  - model: 1D-MAE-B
+  - _self_
+
+hydra:
+  run:
+    dir: local/hydra/${now:%Y-%m-%d}/${now:%H-%M-%S}

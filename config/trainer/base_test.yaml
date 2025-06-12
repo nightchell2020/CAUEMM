@@ -1,0 +1,29 @@
+run_mode: test
+
+# reproducibility
+seed: 0
+
+# load Pretrained weight
+load_pretrained: mae_pretrain_ver2
+minibatch_3090: 1
+
+# iterations: ???  # automatically decided during runtime
+
+# regularization
+criterion: cross-entropy
+weight_decay: 0.01
+mixup: 0.0
+
+# log
+num_history: 500
+save_model: true
+
+# wandb
+use_wandb: false
+draw_result: true
+watch_model: false
+
+# GPU
+ddp: false
+# device: ???  automatically decided during runtime
+# ddp_size: ???  automatically decided during runtime
