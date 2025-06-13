@@ -24,7 +24,7 @@ class CauEegMriMultiModalDataset(Dataset):
         load_event: bool,
         eeg_file_format: str = "memmap",
         use_prefix_signal: bool = True,
-        transform= None,
+        transform = None,
     ):
         if eeg_file_format not in ["edf", "feather", "memmap", "np"]:
             raise ValueError(
@@ -38,6 +38,7 @@ class CauEegMriMultiModalDataset(Dataset):
         self.mri_file_format = 'nii'
         self.use_prefix_signal = use_prefix_signal
         self.transform = transform
+
 
     def __len__(self):
         return len(self.data_list)
@@ -59,6 +60,7 @@ class CauEegMriMultiModalDataset(Dataset):
         if self.load_event:
             sample["event"] = self._read_event(sample)
 
+        # ToDo: How to separately process transform ?
         if self.transform:
             sample = self.transform(sample)
 

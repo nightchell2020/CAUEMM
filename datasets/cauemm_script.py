@@ -8,9 +8,22 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torchvision import transforms
 
-from .eeg_pipeline import eeg_collate_fn
-
 from .cauemm_dataset import CauEegMriMultiModalDataset
+from .eeg_pipeline import EegAddGaussianNoiseAge
+from .eeg_pipeline import EegAdditiveGaussianNoise, EegMultiplicativeGaussianNoise
+from .eeg_pipeline import EegChannelDropOut
+from .eeg_pipeline import EegDropChannels, EegChannelDifference
+from .eeg_pipeline import EegNormalizeAge
+from .eeg_pipeline import EegNormalizeMeanStd, EegNormalizePerSignal
+from .eeg_pipeline import EegRandomCrop
+from .eeg_pipeline import EegResample
+from .eeg_pipeline import EegSpectrogram
+from .eeg_pipeline import EegToTensor, EegToDevice
+from .eeg_pipeline import eeg_collate_fn
+from .mri_pipeline import MriToDevice, MriToTensor
+from .mri_pipeline import MriResize, MriSpatialPad
+from .mri_pipeline import MriNormalize
+
 
 def load_cauemm_config(dataset_path: str):
     """Load the configuration of the CAUMRI dataset.
@@ -39,7 +52,7 @@ def load_cauemm_full_dataset(
         dataset_path: str,
         load_event: bool = True,
         eeg_file_format: str = "memmap",
-        transform=None,
+        transform: list = None,
 ):
     """Load the whole CAUMRI dataset as a PyTorch dataset instance without considering the target task.
 
@@ -314,12 +327,448 @@ def load_cauemm_task_split(
 
     return config, dataset
 
+def calculate_signal_statistics(
+        train_loader,
+        preprocess_train=None,
+        repeats=5,
+        verbose=False,
+):
+    signal_means = torch.zeros((1,))
+    signal_stds = torch.zeros((1,))
+    n_count = 0
+
+    for r in range(repeats):
+        for i, sample in enumerate(train_loader):
+            if preprocess_train is not None:
+                preprocess_train(sample)
+
+            signal = sample["signal"]
+            std, mean = torch.std_mean(signal, dim=-1, keepdim=True)  # [N, C, L] or [N, (2)C, F, T]
+
+            if r == 0 and i == 0:
+                signal_means = torch.zeros_like(mean)
+                signal_stds = torch.zeros_like(std)
+
+            signal_means += mean
+            signal_stds += std
+            n_count += 1
+
+    signal_mean = torch.mean(
+        signal_means / n_count,
+        dim=0,
+        keepdim=True,
+    )  # [N, C, L] or [N, (2)C, F, T]
+    signal_std = torch.mean(signal_stds / n_count, dim=0, keepdim=True)
+
+    if verbose:
+        print("Mean and standard deviation for signal:")
+        pprint.pprint(signal_mean, width=250)
+        print("-")
+        pprint.pprint(signal_std, width=250)
+        print("\n" + "-" * 100 + "\n")
+
+    return signal_mean, signal_std
+
+
+def calculate_age_statistics(train_loader, verbose=False):
+    age_means = torch.zeros((1,))
+    age_stds = torch.zeros((1,))
+    n_count = 0
+
+    for i, sample in enumerate(train_loader):
+        age = sample["age"]
+        std, mean = torch.std_mean(age, dim=-1, keepdim=True)
+
+        if i == 0:
+            age_means = torch.zeros_like(mean)
+            age_stds = torch.zeros_like(std)
+
+        age_means += mean
+        age_stds += std
+        n_count += 1
+
+    age_mean = torch.mean(age_means / n_count, dim=0, keepdim=True)
+    age_std = torch.mean(age_stds / n_count, dim=0, keepdim=True)
+
+    if verbose:
+        print("Age mean and standard deviation:")
+        print(age_mean, age_std)
+        print("\n" + "-" * 100 + "\n")
+
+    return age_mean, age_std
+
+
+def calculate_stft_params(
+        seq_length,
+        n_fft=0,
+        hop_ratio=1.0 / 4.0,
+        resample_ratio=1.0,
+        verbose=False,
+):
+    if n_fft == 0:
+        n_fft = round(math.sqrt(2.0 * seq_length / hop_ratio))
+    elif isinstance(n_fft, float):
+        n_fft = round(n_fft)
+    hop_length = round(n_fft * hop_ratio)
+    seq_len_2d = (
+        math.floor(n_fft / 2.0) + 1,
+        math.floor(seq_length / hop_length * resample_ratio) + 1,
+    )
+
+    if verbose:
+        print(
+            f"Input sequence length: ({seq_length}) would become "
+            f"({seq_len_2d[0]}, {seq_len_2d[1]}) "
+            f"after the STFT with n_fft ({n_fft}) and hop_length ({hop_length})."
+        )
+        print("\n" + "-" * 100 + "\n")
+
+    return n_fft, hop_length, seq_len_2d
+
 #ToDo : transforms...
 def compose_transforms(config, verbose=False):
-    transform = []
-    transform_multicrop = []
+    eeg_transform = []
+    mri_transform = []
+    eeg_transform_multicrop = []
+
+    #########################
+    #   SIGNAL TRANSFORM    #
+    #########################
+    eeg_transform += [
+        EegRandomCrop(
+            crop_length=config.get("crop_length", config["seq_length"]),
+            length_limit=config.get("signal_length_limit", 10 ** 7),
+            multiple=config.get("crop_multiple", 1),
+            latency=config.get("latency", 0),
+            segment_simulation=config.get("segment_simulation", False),
+            return_timing=config.get("crop_timing_analysis", False),
+            reject_events=config.get("reject_events", False),
+        )
+    ]
+    eeg_transform_multicrop += [
+        EegRandomCrop(
+            crop_length=config.get("crop_length", config["seq_length"]),
+            length_limit=config.get("signal_length_limit", 10 ** 7),
+            multiple=config.get("test_crop_multiple", 8),
+            latency=config.get("latency", 0),
+            segment_simulation=config.get("segment_simulation", False),
+            return_timing=config.get("crop_timing_analysis", False),
+            reject_events=config.get("reject_events", False),
+        )
+    ]
+
+    if config.get("channel_difference", None):
+        channel_difference_list = config.get("channel_difference", None)
+        if len(channel_difference_list) != 2:
+            raise ValueError(f"config['channel_difference'] should be the list of length 2.")
+        eeg_transform += [EegChannelDifference(channel_difference_list[0], channel_difference_list[1])]
+        eeg_transform_multicrop += [EegChannelDifference(channel_difference_list[0], channel_difference_list[1])]
+        signal_header = config["signal_header"]
+        config["montage"] = " - ".join([signal_header[i].split("-")[0] for i in channel_difference_list])
+    else:
+        channel_reduction_list = config.get("channel_reduction_list", [])
+
+        if config.get("EKG", None) not in [
+            "O",
+            "X",
+            None,
+        ]:
+            raise ValueError(f"config['EKG'] should be one of ['O', 'X', None].")
+        elif config.get("EKG", None) == "X":
+            channel_reduction_list.append(config["signal_header"].index("EKG"))
+
+        if config.get("photic", None) not in [
+            "O",
+            "X",
+            None,
+        ]:
+            raise ValueError(f"config['photic'] should be one of ['O', 'X', None].")
+        elif config.get("photic", None) == "X":
+            channel_reduction_list.append(config["signal_header"].index("Photic"))
+
+        channel_reduction_set = set(channel_reduction_list)
+
+        eeg_transform += [EegDropChannels(sorted([*channel_reduction_set]))]
+        eeg_transform_multicrop += [EegDropChannels(sorted([*channel_reduction_set]))]
+
+    ### Numpy to Tensor ###
+    eeg_transform += [EegToTensor()]
+    eeg_transform_multicrop += [EegToTensor()]
+
+    ### Transform-Compose ###
+    eeg_transform = transforms.Compose(eeg_transform)
+    eeg_transform_multicrop = transforms.Compose(eeg_transform_multicrop)
+
+    #########################
+    #   IMAGE TRANSFORM     #
+    #########################
+    # Todo : Any additive transformation or augmentation for MRI ?
+    mri_transform += []
+
+    transform = (eeg_transform, mri_transform)
+    transform_multicrop = (eeg_transform_multicrop, mri_transform)
+
+    if verbose:
+        print("eeg_transform:", eeg_transform)
+        print("\n" + "-" * 100 + "\n")
+
+        print(
+            "eeg_transform_multicrop:",
+            eeg_transform_multicrop,
+        )
+        print("\n" + "-" * 100 + "\n")
+        print()
+
+        print("mri_transform:", eeg_transform)
+        print("\n" + "-" * 100 + "\n")
+        print()
 
     return transform, transform_multicrop
+
+def compose_preprocess(config, train_loader, verbose=True):
+    eeg_preprocess_train = []
+    eeg_preprocess_test = []
+    mri_preprocess_train = []
+    mri_preprocess_test = []
+
+    #####################
+    #   EEG PREPROCESS  #
+    #####################
+    eeg_preprocess_train += [EegToDevice(device=config["device"])]
+    eeg_preprocess_test += [EegToDevice(device=config["device"])]
+
+    if "crop_length" not in config:
+        config["crop_length"] = config["seq_length"]
+    sampling_rate = config.get("sampling_rate", 200)
+    config["seq_length"] = math.ceil(config["crop_length"] * config.get("resample", sampling_rate) / sampling_rate)
+
+    if config.get("resample", None):
+        eeg_preprocess_train += [EegResample(orig_freq=sampling_rate, new_freq=config["resample"]).to(config["device"])]
+        eeg_preprocess_test += [EegResample(orig_freq=sampling_rate, new_freq=config["resample"]).to(config["device"])]
+
+    if "age_mean" not in config or "age_std" not in config:
+        (
+            config["age_mean"],
+            config["age_std"],
+        ) = calculate_age_statistics(train_loader, verbose=False)
+    eeg_preprocess_train += [
+        EegNormalizeAge(
+            mean=config["age_mean"],
+            std=config["age_std"],
+        )
+    ]
+    eeg_preprocess_test += [
+        EegNormalizeAge(
+            mean=config["age_mean"],
+            std=config["age_std"],
+        )
+    ]
+
+    if config.get("run_mode", None) == "eval":
+        pass
+    elif config.get("awgn_age") is None or config["awgn_age"] <= 1e-12:
+        pass
+    elif config["awgn_age"] > 0.0:
+        eeg_preprocess_train += [EegAddGaussianNoiseAge(mean=0.0, std=config["awgn_age"])]
+    else:
+        raise ValueError(f"config['awgn_age'] have to be None or a positive floating point number")
+
+    ##################################
+    # data normalization (1D signal) #
+    ##################################
+    if config["input_norm"] == "dataset":
+        if "signal_mean" not in config or "signal_std" not in config:
+            (
+                config["signal_mean"],
+                config["signal_std"],
+            ) = calculate_signal_statistics(
+                train_loader,
+                repeats=5,
+                verbose=False,
+            )
+        eeg_preprocess_train += [
+            EegNormalizeMeanStd(
+                mean=config["signal_mean"],
+                std=config["signal_std"],
+            )
+        ]
+        eeg_preprocess_test += [
+            EegNormalizeMeanStd(
+                mean=config["signal_mean"],
+                std=config["signal_std"],
+            )
+        ]
+    elif config["input_norm"] == "datapoint":
+        eeg_preprocess_train += [EegNormalizePerSignal()]
+        eeg_preprocess_test += [EegNormalizePerSignal()]
+    elif config["input_norm"] == "no":
+        pass
+    else:
+        raise ValueError(f"config['input_norm'] have to be set to one of ['dataset', 'datapoint', 'no']")
+
+    ###############################
+    # dropout channel (1D signal) #
+    ###############################
+    if config.get("channel_dropout", 0.0) > 1e-8:
+        eeg_preprocess_train += [EegChannelDropOut(p=config["channel_dropout"])]
+
+    ##############################################################
+    # multiplicative Gaussian noise for augmentation (1D signal) #
+    ##############################################################
+    if config.get("run_mode", None) == "eval":
+        pass
+    elif config.get("mgn") is None or config["mgn"] <= 1e-12:
+        pass
+    elif config["mgn"] > 0.0:
+        eeg_preprocess_train += [EegMultiplicativeGaussianNoise(mean=0.0, std=config["mgn"])]
+    else:
+        raise ValueError(f"config['mgn'] have to be None or a positive floating point number")
+
+    ########################################################
+    # additive Gaussian noise for augmentation (1D signal) #
+    ########################################################
+    if config.get("run_mode", None) == "eval":
+        pass
+    elif config.get("awgn") is None or config["awgn"] <= 1e-12:
+        pass
+    elif config["awgn"] > 0.0:
+        eeg_preprocess_train += [EegAdditiveGaussianNoise(mean=0.0, std=config["awgn"])]
+    else:
+        raise ValueError(f"config['awgn'] have to be None or a positive floating point number")
+
+    ###################
+    # STFT (1D -> 2D) #
+    ###################
+    if config.get("model", "1D").startswith("2D"):
+        stft_params = config.pop("stft_params", {})
+        (
+            n_fft,
+            hop_length,
+            seq_len_2d,
+        ) = calculate_stft_params(
+            seq_length=config.get("crop_length", config["seq_length"]),
+            n_fft=stft_params.pop("n_fft", 0),
+            hop_ratio=stft_params.pop("hop_ratio", 1 / 4.0),
+            resample_ratio=config.get("resample", sampling_rate) / sampling_rate,
+            verbose=False,
+        )
+        config["stft_params"] = {
+            "n_fft": n_fft,
+            "hop_length": hop_length,
+            **stft_params,
+        }
+        config["seq_len_2d"] = seq_len_2d
+
+        eeg_preprocess_train += [EegSpectrogram(**config["stft_params"])]
+        eeg_preprocess_test += [EegSpectrogram(**config["stft_params"])]
+
+    ######################################
+    ### data normalization (2D signal) ###
+    ######################################
+    if config.get("model", "1D").startswith("2D"):
+        if config["input_norm"] == "dataset":
+            if "signal_2d_mean" not in config or "signal_2d_std" not in config:
+                preprocess_temp = transforms.Compose(eeg_preprocess_train)
+                preprocess_temp = torch.nn.Sequential(*preprocess_temp.transforms)
+
+                (
+                    signal_2d_mean,
+                    signal_2d_std,
+                ) = calculate_signal_statistics(
+                    train_loader,
+                    preprocess_train=preprocess_temp,
+                    repeats=5,
+                    verbose=False,
+                )
+                config["signal_2d_mean"] = signal_2d_mean
+                config["signal_2d_std"] = signal_2d_std
+
+            eeg_preprocess_train += [
+                EegNormalizeMeanStd(
+                    mean=config["signal_2d_mean"],
+                    std=config["signal_2d_std"],
+                )
+            ]
+            eeg_preprocess_test += [
+                EegNormalizeMeanStd(
+                    mean=config["signal_2d_mean"],
+                    std=config["signal_2d_std"],
+                )
+            ]
+
+        elif config["input_norm"] == "datapoint":
+            eeg_preprocess_train += [EegNormalizePerSignal()]
+            eeg_preprocess_test += [EegNormalizePerSignal()]
+
+        elif config["input_norm"] == "no":
+            pass
+
+        else:
+            raise ValueError(f"config['input_norm'] have to be set to one of ['dataset', 'datapoint', 'no']")
+
+
+
+    #####################
+    #   MRI PREPROCESS  #
+    #####################
+    mri_preprocess_train += [MriToDevice(device=config["device"])]
+    mri_preprocess_test += [MriToDevice(device=config["device"])]
+
+    #######################
+    ### Pad and Resize  ###
+    #######################
+    resize_size = config.get('mri_resize', 128)
+    mri_preprocess_train += [MriSpatialPad(256)]
+    mri_preprocess_train += [MriResize(resize_size)]
+    mri_preprocess_test += [MriSpatialPad(256)]
+    mri_preprocess_test += [MriResize(resize_size)]
+
+    #######################
+    ### Normalization   ###
+    #######################
+    if config['mri_norm_type'] == 'zscore':
+        mri_preprocess_train += [MriNormalize(eps=1e-8, mri_norm_type='zscore')]
+        mri_preprocess_test += [MriNormalize(eps=1e-8, mri_norm_type='zscore')]
+    elif config['mri_norm_type'] == 'min_max':
+        mri_preprocess_train += [MriNormalize(eps=1e-8, mri_norm_type='min_max')]
+        mri_preprocess_test += [MriNormalize(eps=1e-8, mri_norm_type='min_max')]
+    elif config['mri_norm_type'] == 'no':
+        pass
+    else:
+        raise ValueError(f"config['input_norm'] have to be set to one of ['zscore', 'min_max', 'no']")
+
+    #######################
+    # Compose All at Once #
+    #######################
+    eeg_preprocess_train = transforms.Compose(eeg_preprocess_train)
+    eeg_preprocess_train = torch.nn.Sequential(*eeg_preprocess_train.transforms)
+
+    eeg_preprocess_test = transforms.Compose(eeg_preprocess_test)
+    eeg_preprocess_test = torch.nn.Sequential(*eeg_preprocess_test.transforms)
+
+    mri_preprocess_train = transforms.Compose(mri_preprocess_train)
+    mri_preprocess_train = torch.nn.Sequential(*mri_preprocess_train.transforms)
+
+    mri_preprocess_test = transforms.Compose(mri_preprocess_test)
+    mri_preprocess_test = torch.nn.Sequential(*mri_preprocess_test.transforms)
+
+    preprocess_train = (eeg_preprocess_train, mri_preprocess_train)
+    preprocess_test = (eeg_preprocess_test, mri_preprocess_test)
+
+    if verbose:
+        print("eeg_preprocess_train:", eeg_preprocess_train)
+        print("\n" + "-" * 100 + "\n")
+
+        print("eeg_preprocess_test:", eeg_preprocess_test)
+        print("\n" + "-" * 100 + "\n")
+
+        print("mri_preprocess_train:", mri_preprocess_train)
+        print("\n" + "-" * 100 + "\n")
+
+        print("mri_preprocess_test:", mri_preprocess_test)
+        print("\n" + "-" * 100 + "\n")
+    return preprocess_train, preprocess_test
+
 
 def make_cauemm_dataloader(
         config,
