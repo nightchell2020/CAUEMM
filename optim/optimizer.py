@@ -29,3 +29,5 @@ def get_optimizer(model, config):
             lr=config["base_lr"],
             weight_decay=config["weight_decay"],
         )
+    else:
+        return ValueError(f"Expected one of sgd, adam, adamw")

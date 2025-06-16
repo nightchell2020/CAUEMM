@@ -19,9 +19,11 @@ def train_multistep(model, loader, preprocess, optimizer, scheduler, amp_scaler,
             optimizer.zero_grad()
 
             # preprocessing (this includes to-device operation)
-            preprocess(sample_batched)
+            preprocess[0](sample_batched)
+            preprocess[1](sample_batched)
 
             # pull the data
+            #Todo : modify input x3d,x1d,age?
             x = sample_batched["signal"]
             age = sample_batched["age"]
             y = sample_batched["class_label"]

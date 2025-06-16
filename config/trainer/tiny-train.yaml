@@ -16,3 +16,6 @@ use_wandb: false
 draw_result: false
 watch_model: false
 
+# GPU
+#ddp: true
+ddp: false

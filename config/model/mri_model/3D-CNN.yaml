@@ -1,0 +1,14 @@
+defaults:
+  - base_model
+  - _self_
+
+_target_: models.simple_cnn_3d.Simple3DCNN
+model: Simple3DCNN
+
+in_channels: 19
+out_dims: ???
+fc_stages: 1
+use_age: 'no'
+seq_length: 1
+activation: relu
+minibatch_4090: 32

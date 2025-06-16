@@ -37,7 +37,8 @@ class CauEegMriMultiModalDataset(Dataset):
         self.eeg_file_format = eeg_file_format
         self.mri_file_format = 'nii'
         self.use_prefix_signal = use_prefix_signal
-        self.transform = transform
+        self.eeg_transform = transform[0]
+        self.mri_transform = transform[1]
 
 
     def __len__(self):
@@ -61,9 +62,10 @@ class CauEegMriMultiModalDataset(Dataset):
             sample["event"] = self._read_event(sample)
 
         # ToDo: How to separately process transform ?
-        if self.transform:
-            sample = self.transform(sample)
-
+        if self.eeg_transform:
+            sample = self.eeg_transform(sample)
+        if self.mri_transform:
+            sample = self.mri_transform(sample)
         return sample
 
     def _read_volume(self, anno):
@@ -110,7 +112,7 @@ class CauEegMriMultiModalDataset(Dataset):
         prefix = "CAUMRI/caumri-dataset/image/nii/"
         nii_file = os.path.join(self.root_dir, prefix, f"{anno['serial']}.nii")
         nii = nib.load(nii_file)
-        image, header = nii, nii.header
+        image, header = nii.get_fdata(), nii.header
         return image
 
     def _read_event(self, m):

@@ -53,24 +53,24 @@ import os
 # #########################
 
 
-import json
-from datasets.cauemm_dataset import CauEegMriMultiModalDataset
-
+# import json
+# from datasets.cauemm_dataset import CauEegMriMultiModalDataset
+#
+# # with open(
+# #         os.path.join('/media/night/dawn/brain/CAUEEG/caueeg-dataset/', "annotation.json"),
+# #         "r",
+# # ) as json_file:
+# #     annotation = json.load(json_file)
 # with open(
-#         os.path.join('/media/night/dawn/brain/CAUEEG/caueeg-dataset/', "annotation.json"),
+#         os.path.join('/media/night/dawn/brain/CAUEEG/caueeg-dataset/', 'abnormal' + ".json"),
 #         "r",
 # ) as json_file:
-#     annotation = json.load(json_file)
-with open(
-        os.path.join('/media/night/dawn/brain/CAUEEG/caueeg-dataset/', 'abnormal' + ".json"),
-        "r",
-) as json_file:
-    task_dict = json.load(json_file)
-t_d = CauEegMriMultiModalDataset(
-    '/media/night/dawn/brain/,',
-    task_dict["train_split"],
-    load_event = False,
-    eeg_file_format='memmap',
-    transform=None
-)
-print("@@@@")
+#     task_dict = json.load(json_file)
+# t_d = CauEegMriMultiModalDataset(
+#     '/media/night/dawn/brain/,',
+#     task_dict["train_split"],
+#     load_event = False,
+#     eeg_file_format='memmap',
+#     transform=None
+# )
+# print("@@@@")

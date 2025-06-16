@@ -11,7 +11,7 @@ from packaging import version
 from omegaconf import DictConfig, OmegaConf
 from hydra.core.hydra_config import HydraConfig
 from torch.nn.parallel import DistributedDataParallel as DDP
-from datasets.caueeg_script import build_dataset_for_train
+from datasets.cauemm_script import build_emm_dataset_for_train
 from models.utils import count_parameters
 from trainer.train_script import train_script
 
@@ -78,7 +78,7 @@ def set_seed(config, rank):
         np.random.seed(seed)
 
 def compose_dataset(config):
-    return build_dataset_for_train(config)
+    return build_emm_dataset_for_train(config)
 
 def generate_model(config):
     model = hydra.utils.instantiate(config)

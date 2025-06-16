@@ -1,9 +1,9 @@
 defaults:
-  - data: caueeg-abnormal
+  - data: cauemm-abnormal
 #  - trainer: base_test
   - trainer: tiny-train
 #  - trainer: base_train
-  - model: 1D-MAE-B
+  - model: multi-modal
   - _self_
 
 hydra:

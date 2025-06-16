@@ -1,4 +1,5 @@
 # base configuration of CAUEegMriMulti-modal
+
 dataset_name: cauemm-dataset
 dataset_path: /media/night/dawn/brain/
 eeg_file_format: memmap

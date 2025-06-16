@@ -5,8 +5,7 @@ import torch.nn as nn
 from .activation import get_activation_class
 from .activation import get_activation_functional
 
-
-class Ieracitano3DCNN(nn.Module):
+class Simple3DCNN(nn.Module):
     def __init__(
         self,
         in_channels: int,

@@ -19,7 +19,7 @@ from .eeg_pipeline import EegRandomCrop
 from .eeg_pipeline import EegResample
 from .eeg_pipeline import EegSpectrogram
 from .eeg_pipeline import EegToTensor, EegToDevice
-from .eeg_pipeline import eeg_collate_fn
+from .mri_pipeline import emm_collate_fn
 from .mri_pipeline import MriToDevice, MriToTensor
 from .mri_pipeline import MriResize, MriSpatialPad
 from .mri_pipeline import MriNormalize
@@ -33,7 +33,7 @@ def load_cauemm_config(dataset_path: str):
     """
     try:
         with open(
-                os.path.join(dataset_path, "annotation.json"),
+                os.path.join(dataset_path, "annotation_EMM.json"),
                 "r",
         ) as json_file:
             annotation = json.load(json_file)
@@ -67,7 +67,7 @@ def load_cauemm_full_dataset(
     """
     try:
         with open(
-                os.path.join(dataset_path, "annotation.json"),
+                os.path.join(dataset_path, "annotation_EMM.json"),
                 "r",
         ) as json_file:
             annotation = json.load(json_file)
@@ -125,7 +125,7 @@ def load_cauemm_task_datasets(
 
     try:
         with open(
-                os.path.join(dataset_path, task + ".json"),
+                os.path.join(dataset_path, task + "_EMM.json"),
                 "r",
         ) as json_file:
             task_dict = json.load(json_file)
@@ -247,7 +247,7 @@ def load_cauemm_task_split(
 
     try:
         with open(
-                os.path.join(dataset_path, task + ".json"),
+                os.path.join(dataset_path, task + "_EMM.json"),
                 "r",
         ) as json_file:
             task_dict = json.load(json_file)
@@ -503,10 +503,14 @@ def compose_transforms(config, verbose=False):
     #   IMAGE TRANSFORM     #
     #########################
     # Todo : Any additive transformation or augmentation for MRI ?
-    mri_transform += []
 
-    transform = (eeg_transform, mri_transform)
-    transform_multicrop = (eeg_transform_multicrop, mri_transform)
+    resize_size = config.get('mri_resize', 128)
+    mri_transform += [MriSpatialPad(spatial_size=(256,256,256))]
+    mri_transform += [MriResize(resize_size)]
+    mri_transform += [MriSpatialPad(spatial_size=(256,256,256))]
+    mri_transform += [MriResize(resize_size)]
+    mri_transform += [MriToTensor()]
+    mri_transform = transforms.Compose(mri_transform)
 
     if verbose:
         print("eeg_transform:", eeg_transform)
@@ -523,7 +527,7 @@ def compose_transforms(config, verbose=False):
         print("\n" + "-" * 100 + "\n")
         print()
 
-    return transform, transform_multicrop
+    return eeg_transform, eeg_transform_multicrop, mri_transform
 
 def compose_preprocess(config, train_loader, verbose=True):
     eeg_preprocess_train = []
@@ -717,11 +721,11 @@ def compose_preprocess(config, train_loader, verbose=True):
     #######################
     ### Pad and Resize  ###
     #######################
-    resize_size = config.get('mri_resize', 128)
-    mri_preprocess_train += [MriSpatialPad(256)]
-    mri_preprocess_train += [MriResize(resize_size)]
-    mri_preprocess_test += [MriSpatialPad(256)]
-    mri_preprocess_test += [MriResize(resize_size)]
+    # resize_size = config.get('mri_resize', 128)
+    # mri_preprocess_train += [MriSpatialPad(spatial_size=(256,256,256))]
+    # mri_preprocess_train += [MriResize(resize_size)]
+    # mri_preprocess_test += [MriSpatialPad(spatial_size=(256,256,256))]
+    # mri_preprocess_test += [MriResize(resize_size)]
 
     #######################
     ### Normalization   ###
@@ -767,6 +771,7 @@ def compose_preprocess(config, train_loader, verbose=True):
 
         print("mri_preprocess_test:", mri_preprocess_test)
         print("\n" + "-" * 100 + "\n")
+
     return preprocess_train, preprocess_test
 
 
@@ -817,7 +822,7 @@ def make_cauemm_dataloader(
             drop_last=True,
             num_workers=num_workers,
             pin_memory=pin_memory,
-            collate_fn=eeg_collate_fn,
+            collate_fn=emm_collate_fn,
         )
     else:
         train_loader = DataLoader(
@@ -828,7 +833,7 @@ def make_cauemm_dataloader(
             drop_last=False,
             num_workers=num_workers,
             pin_memory=pin_memory,
-            collate_fn=eeg_collate_fn,
+            collate_fn=emm_collate_fn,
         )
 
     val_loader = DataLoader(
@@ -839,7 +844,7 @@ def make_cauemm_dataloader(
         drop_last=False,
         num_workers=num_workers,
         pin_memory=pin_memory,
-        collate_fn=eeg_collate_fn,
+        collate_fn=emm_collate_fn,
     )
 
     test_loader = DataLoader(
@@ -849,7 +854,7 @@ def make_cauemm_dataloader(
         drop_last=False,
         num_workers=num_workers,
         pin_memory=pin_memory,
-        collate_fn=eeg_collate_fn,
+        collate_fn=emm_collate_fn,
     )
 
     multicrop_test_loader = DataLoader(
@@ -859,7 +864,7 @@ def make_cauemm_dataloader(
         drop_last=False,
         num_workers=num_workers,
         pin_memory=pin_memory,
-        collate_fn=eeg_collate_fn,
+        collate_fn=emm_collate_fn,
     )
 
     return (
@@ -883,9 +888,10 @@ def build_emm_dataset_for_train(config, verbose=False):
         print("\n" + "=" * 80 + "\n")
         config["run_mode"] = "train"
 
-    (transform, transform_multicrop) = compose_transforms(config, verbose=verbose)
-    config["transform"] = transform
-    config["transform_multicrop"] = transform_multicrop
+    (eeg_transform, eeg_transform_multicrop, mri_transform) = compose_transforms(config, verbose=verbose)
+    config["eeg_transform"] = eeg_transform
+    config["eeg_transform_multicrop"] = eeg_transform_multicrop
+    config["mri_transform"] = mri_transform
     load_event = config["load_event"] or config.get("reject_events", False)
 
     (
@@ -898,7 +904,7 @@ def build_emm_dataset_for_train(config, verbose=False):
         task=config["task"],
         load_event=load_event,
         eeg_file_format=config["eeg_file_format"],
-        transform=transform,
+        transform=(eeg_transform,mri_transform),
         verbose=verbose,
     )
     config.update(**config_task)
@@ -912,7 +918,7 @@ def build_emm_dataset_for_train(config, verbose=False):
         split="test",
         load_event=load_event,
         eeg_file_format=config["eeg_file_format"],
-        transform=transform_multicrop,
+        transform=(eeg_transform_multicrop, mri_transform),
         verbose=verbose,
     )
 
@@ -929,6 +935,14 @@ def build_emm_dataset_for_train(config, verbose=False):
         multicrop_test_dataset,
         verbose=False,
     )
+    (
+        preprocess_train,
+        preprocess_test,
+    ) = compose_preprocess(config, train_loader, verbose=verbose)
+    config["preprocess_train"] = preprocess_train
+    config["preprocess_test"] = preprocess_test
+    # config["in_channels"] = preprocess_train(next(iter(train_loader)))["signal"].shape[1]
+    config["out_dims"] = len(config["class_label_to_name"])
 
     return (
         train_loader,
