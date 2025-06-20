@@ -37,15 +37,14 @@ def plot_and_save_eeg_signals(eeg_tensor, sample_idx=0, save_path=None):
     :param save_path: 저장할 파일 경로 (PNG 형식)
     """
     assert sample_idx < eeg_tensor.shape[0], "Invalid sample index"
-    os.makedirs(save_path, exist_ok=True)  # 디렉토리 없으면 생성
-    # 데이터를 numpy 배열로 변환
+    os.makedirs(save_path, exist_ok=True)
+
     eeg_sample = eeg_tensor[sample_idx].cpu().detach().numpy()  # (20, 2048)
 
-    # 4️⃣ 플롯 설정
     fig, axes = plt.subplots(nrows=20, ncols=1, figsize=(15, 15), sharex=True)
     fig.suptitle(f"EEG Sample {sample_idx}", fontsize=16)
 
-    time = np.arange(eeg_sample.shape[1])  # 시간축 (0 ~ 2047)
+    time = np.arange(eeg_sample.shape[1])
 
     for i, ax in enumerate(axes):
         ax.plot(time, eeg_sample[i], label=f'Channel {i + 1}', color='b', linewidth=0.8)
@@ -60,7 +59,7 @@ def plot_and_save_eeg_signals(eeg_tensor, sample_idx=0, save_path=None):
             ax.set_xticks([])
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.95)  # 제목과 그래프 간격 조정
+    plt.subplots_adjust(top=0.95)
 
     # 5️⃣ 저장 옵션
     if save_path:
@@ -82,14 +81,16 @@ def compute_feature_embedding(model, sample_batched, preprocess, config, target_
     model.eval()
 
     # preprocessing (this includes to-device operation)
-    preprocess(sample_batched)
+    preprocess[0](sample_batched)
+    preprocess[1](sample_batched)
 
     # apply model on whole batch directly on device
-    x = sample_batched["signal"]
+    signal = sample_batched["signal"]
+    volume = sample_batched["volume"]
     age = sample_batched["age"]
 
     module = model.module if config.get("ddp", False) else model
-    output = module.compute_feature_embedding(x, age, target_from_last=target_from_last)
+    output = module.compute_feature_embedding(signal, volume, age, target_from_last=target_from_last)
 
     # DeiT model
     if isinstance(output, tuple):

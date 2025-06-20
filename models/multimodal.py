@@ -11,29 +11,34 @@ class EMMNet(nn.Module):
             self,
             mri_model,
             eeg_model,
+            concat_dim: int,
+            output_length: int,
             fc_stages: int,
-            fusion='concat',
+            fusion: str ='concat',
+            activation: str = "relu",
             **kwargs,
         ):
         super().__init__()
         self.mri_model = mri_model
         self.eeg_model = eeg_model
+        self.concat_dim = concat_dim
+        self.output_length = output_length
         self.fc_stages = fc_stages
         self.fusion = fusion
+        self.nn_act = get_activation_class(activation, class_name=self.__class__.__name__)
 
         fc_stage = []
-        for i in range(fc_stages - 1):
+        for i in range(fc_stages):
             layer = nn.Sequential(
-                nn.Linear(1000, 300, bias=False),
+                nn.Linear(self.concat_dim*2, self.output_length, bias=False),
                 nn.Dropout(),
-                nn.BatchNorm1d(300),
+                nn.BatchNorm1d(self.output_length),
                 self.nn_act()
             )
             fc_stage.append(layer)
 
         self.fc_stage = nn.Sequential(*fc_stage)
-        # Todo: programming output_length?
-        self.output_length = 10
+
 
     def reset_weights(self):
         for m in self.modules():
@@ -46,9 +51,9 @@ class EMMNet(nn.Module):
     def get_output_length(self):
         return self.output_length
 
-    def compute_feature_embedding(self, x3d, x1d, age, target_from_last: int = 0):
-        feat3d = self.cnn3d(x3d)
-        feat1d = self.resnet1d(x1d, age)
+    def compute_feature_embedding(self, x1d, x3d, age, target_from_last: int = 0):
+        feat3d = self.mri_model(x3d)
+        feat1d = self.eeg_model(x1d, age)
 
         if self.fusion == "concat":
             fused = torch.cat([feat3d, feat1d], dim=1)

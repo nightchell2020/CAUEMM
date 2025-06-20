@@ -499,11 +499,13 @@ def compose_transforms(config, verbose=False):
     eeg_transform = transforms.Compose(eeg_transform)
     eeg_transform_multicrop = transforms.Compose(eeg_transform_multicrop)
 
-    #########################
-    #   IMAGE TRANSFORM     #
-    #########################
-    # Todo : Any additive transformation or augmentation for MRI ?
+    #############################################
+    #              IMAGE TRANSFORM              #
+    #############################################
 
+    #######################
+    ### Pad and Resize  ###
+    #######################
     resize_size = config.get('mri_resize', 128)
     mri_transform += [MriSpatialPad(spatial_size=(256,256,256))]
     mri_transform += [MriResize(resize_size)]
@@ -710,8 +712,6 @@ def compose_preprocess(config, train_loader, verbose=True):
         else:
             raise ValueError(f"config['input_norm'] have to be set to one of ['dataset', 'datapoint', 'no']")
 
-
-
     #####################
     #   MRI PREPROCESS  #
     #####################
@@ -719,27 +719,18 @@ def compose_preprocess(config, train_loader, verbose=True):
     mri_preprocess_test += [MriToDevice(device=config["device"])]
 
     #######################
-    ### Pad and Resize  ###
-    #######################
-    # resize_size = config.get('mri_resize', 128)
-    # mri_preprocess_train += [MriSpatialPad(spatial_size=(256,256,256))]
-    # mri_preprocess_train += [MriResize(resize_size)]
-    # mri_preprocess_test += [MriSpatialPad(spatial_size=(256,256,256))]
-    # mri_preprocess_test += [MriResize(resize_size)]
-
-    #######################
     ### Normalization   ###
     #######################
-    if config['mri_norm_type'] == 'zscore':
-        mri_preprocess_train += [MriNormalize(eps=1e-8, mri_norm_type='zscore')]
-        mri_preprocess_test += [MriNormalize(eps=1e-8, mri_norm_type='zscore')]
+    if config['mri_norm_type'] == 'z_score':
+        mri_preprocess_train += [MriNormalize(eps=1e-8, mri_norm_type='z_score')]
+        mri_preprocess_test += [MriNormalize(eps=1e-8, mri_norm_type='z_score')]
     elif config['mri_norm_type'] == 'min_max':
         mri_preprocess_train += [MriNormalize(eps=1e-8, mri_norm_type='min_max')]
         mri_preprocess_test += [MriNormalize(eps=1e-8, mri_norm_type='min_max')]
     elif config['mri_norm_type'] == 'no':
         pass
     else:
-        raise ValueError(f"config['input_norm'] have to be set to one of ['zscore', 'min_max', 'no']")
+        raise ValueError(f"config['mri_norm_type'] have to be set to one of ['z_score', 'min_max', 'no']")
 
     #######################
     # Compose All at Once #

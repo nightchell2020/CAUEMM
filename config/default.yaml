@@ -1,8 +1,8 @@
 defaults:
   - data: cauemm-abnormal
 #  - trainer: base_test
-  - trainer: tiny-train
-#  - trainer: base_train
+#  - trainer: tiny-train
+  - trainer: base_train
   - model: multi-modal
   - _self_
 

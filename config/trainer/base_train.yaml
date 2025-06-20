@@ -16,7 +16,7 @@ total_samples: 1.0e+6
 # regularization
 criterion: cross-entropy
 weight_decay: 0.01
-mixup: 0.0
+mixup: 0.0  # must set to be 0
 
 # log
 num_history: 500

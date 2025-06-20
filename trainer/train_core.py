@@ -23,18 +23,19 @@ def train_multistep(model, loader, preprocess, optimizer, scheduler, amp_scaler,
             preprocess[1](sample_batched)
 
             # pull the data
-            #Todo : modify input x3d,x1d,age?
-            x = sample_batched["signal"]
+            signal = sample_batched["signal"]
+            volume = sample_batched["volume"]
             age = sample_batched["age"]
             y = sample_batched["class_label"]
 
             # mix_up the mini-batched data
-            x, age, y1, y2, lam, mixup_index = mixup_data(x, age, y, config["mixup"], config["device"])
+            # but we do not use mix-up aug b/c MRI data, so config['mixup'] set to be 0
+            signal, age, y1, y2, lam, mixup_index = mixup_data(signal, age, y, config["mixup"], config["device"])
 
             # mixed precision training if needed
             with autocast('cuda', enabled=config.get("mixed_precision", False)):
                 # forward pass
-                output = model(x, age)
+                output = model(signal, volume, age)
                 if isinstance(output, tuple):
                     output, output_kd = output
                 else:

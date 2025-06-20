@@ -19,7 +19,7 @@ photic: X
 input_norm: datapoint # dataset
 
 # preprocessing mri_configuration
-resize: 64
+mri_resize: 64
 
 # augmentation configuration
 awgn: 0.001

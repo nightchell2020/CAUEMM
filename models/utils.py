@@ -150,3 +150,35 @@ def make_pool_or_not(base_pool, pool: int):
         return base_pool(pool)
     else:
         raise ValueError(f"make_pool_or_not(pool) receives an invalid value as input.")
+
+def compute_3d_output_size(input_size, conv_list):
+    out = np.array(input_size)
+
+    for cf in conv_list:
+        kernel = cf["kernel_size"]
+        stride = cf["stride"]
+        dilation = cf.get("dilation", 1)
+        pool = cf.get("pool", 1)
+        pad = cf.get("pad", [1,1,1])
+
+        # Pooling
+        out = out // pool
+
+        for i in range(3):
+            effective_k = dilation * (kernel[i] - 1)
+            out[i] = (out[i] + pad[i] - effective_k - 1) // stride[i] + 1
+
+    return tuple(out)
+
+def get_model_size(model):
+    param_size = 0
+    for param in model.parameters():
+        param_size += param.numel() * param.element_size()
+    buffer_size = 0
+    for buffer in model.buffers():
+        buffer_size += buffer.numel() * buffer.element_size()
+    total_size = param_size + buffer_size
+    model_size = total_size / (1024 ** 2)
+    print(f"📦 Model size: {model_size:.2f} MB")
+
+

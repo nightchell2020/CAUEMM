@@ -34,11 +34,11 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
     # wandb init
     if main_process and config["use_wandb"]:
         if config.get("resume", None) is None:
-            wandb.init(project=config.get("project", "noname"), reinit=True)
+            wandb.init(project=config.get("project", "CAUEMM"), reinit=True)
             wandb.run.name = wandb.run.id
         else:
             wandb.init(
-                project=config.get("project", "noname"),
+                project=config.get("project", "CAUEMM"),
                 id=config["resume"],
                 resume="must",
             )

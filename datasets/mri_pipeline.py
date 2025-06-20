@@ -113,21 +113,25 @@ class MriNormalize(torch.nn.Module):
     def __init__(self, eps=1e-8, mri_norm_type='z_score'):
         super().__init__()
         self.eps = eps
+        assert mri_norm_type in ['z_score', 'min_max'], "only support 'z_score' or 'min_max' normalization for now"
         self.norm_type = mri_norm_type
 
     def forward(self,sample):
         volume = sample['volume']
+        if not torch.is_tensor(volume):
+            raise TypeError("input data is not an Tensor")
         mask = volume > 0
-        norm = np.zeros_like(volume)
+        normed = torch.zeros_like(volume)
         if self.norm_type == 'z_score':
-            mean = np.mean(volume[mask])
-            std = np.std(volume[mask])
-            norm[mask] = (volume[mask] - mean) / std
+            mean = volume[mask].mean()
+            std = volume[mask].std()
+
+            normed[mask] = (volume[mask] - mean) / std
         elif self.norm_type == 'min_max':
-            min_val = np.min(volume[mask])
-            max_val = np.max(volume[mask])
-            norm[mask] = (volume[mask] - min_val) / (max_val - min_val)
-        sample['volume'] = norm
+            min_val = (volume[mask]).min()
+            max_val = (volume[mask]).max()
+            normed[mask] = (volume[mask] - min_val) / (max_val - min_val + self.eps)
+        sample['volume'] = normed
         return sample
 
     def __repr__(self) -> str:
@@ -228,6 +232,7 @@ def emm_collate_fn(batch):
 
     batched_sample["signal"] = torch.stack(batched_sample["signal"])
     batched_sample["volume"] = torch.stack(batched_sample["volume"])
+    batched_sample["volume"] = batched_sample["volume"].unsqueeze(dim=1)
     batched_sample["age"] = torch.stack(batched_sample["age"])
     if "class_label" in batched_sample.keys():
         batched_sample["class_label"] = torch.stack(batched_sample["class_label"])

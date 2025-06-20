@@ -4,7 +4,7 @@ defaults:
 
 _target_: models.resnet_1d.ResNet1D
 model: ???
-# seq_length: ???
+seq_length: ${seq_length}
 block: ???
 conv_layers: ???
 base_channels: 64

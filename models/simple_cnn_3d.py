@@ -11,8 +11,7 @@ class Simple3DCNN(nn.Module):
         in_channels: int,
         out_dims: int,
         fc_stages: int,
-        seq_length: int,
-        use_age: str,
+        image_size: int,
         base_channels: int = 16,
         base_pool: str = "max",
         activation: str = "relu",
@@ -20,15 +19,12 @@ class Simple3DCNN(nn.Module):
     ):
         super().__init__()
 
-        if use_age != "no":
-            raise ValueError(f"{self.__class__.__name__}.__init__(use_age) accepts for only 'no'.")
-
         if fc_stages != 1:
             raise ValueError(f"{self.__class__.__name__}.__init__(fc_stages) accepts for only 1.")
 
-        self.sequence_length = seq_length
+        self.image_size = image_size
         self.fc_stages = fc_stages
-
+        self.out_dims = out_dims
         self.nn_act = get_activation_class(activation, class_name=self.__class__.__name__)
         self.F_act = get_activation_functional(activation, class_name=self.__class__.__name__)
 
@@ -39,29 +35,39 @@ class Simple3DCNN(nn.Module):
         else:
             raise ValueError(f"{self.__class__.__name__}.__init__: Invalid base_pool '{base_pool}'")
 
+        # ToDo : consider kernel_size
         self.conv1 = nn.Conv3d(
             in_channels,
             base_channels,
-            kernel_size=(3, 3, 3),
+            kernel_size=(7, 7, 7),
             padding=1,
             stride=1,
             bias=True,
         )
         self.bn1 = nn.BatchNorm3d(base_channels)
         self.pool1 = self.base_pool(kernel_size=(2, 2, 2))
+        self.conv2 = nn.Conv3d(
+            base_channels,
+            base_channels*2,
+            kernel_size=(5, 5, 5),
+            padding=1,
+            stride=1,
+            bias=True,
+        )
+        self.bn2 = nn.BatchNorm3d(base_channels*2)
+        self.pool2 = self.base_pool(kernel_size=(2, 2, 2))
+        # input data = (Batch, Channel=1, D, W, H) where D,H,W = self.image_size
 
-        # 예시: 입력 크기 (N, C=1, D=10, H=32, W=32) → conv → pool → flatten
-        # 실질적으로 D,H,W 사이즈에 맞게 계산해야 함
-        flattened_dim = base_channels * (32 * 32 * 32)  # 예시 기준: D/2=5, H/2=16, W/2=16
+        flattened_dim = base_channels*2 * (14 * 14 * 14)
         fc_stage = []
         fc_stage.append(nn.Linear(flattened_dim, 300))
         fc_stage.append(nn.BatchNorm1d(300))
         fc_stage.append(self.nn_act())
 
-        fc_stage.append(nn.Linear(300, out_dims))
+        fc_stage.append(nn.Linear(300, self.out_dims))
         self.fc_stage = nn.Sequential(*fc_stage)
 
-        self.output_length = 300  # 첫 FC 차원 출력
+
         self.reset_weights()
 
     def reset_weights(self):
@@ -70,7 +76,7 @@ class Simple3DCNN(nn.Module):
                 m.reset_parameters()
 
     def get_output_length(self):
-        return self.output_length
+        return self.out_dims
 
     def get_dims_from_last(self, target_from_last: int):
         l = self.fc_stages - target_from_last
@@ -79,7 +85,8 @@ class Simple3DCNN(nn.Module):
     def get_num_fc_stages(self):
         return self.fc_stages
 
-    def compute_feature_embedding(self, x, age, target_from_last: int = 0):
+    def compute_feature_embedding(self, x, target_from_last: int = 0):
+        # x : (N, C_in=1, D, H, W)
         N = x.size(0)
 
         # conv-bn-act-pool
@@ -87,6 +94,10 @@ class Simple3DCNN(nn.Module):
         x = self.bn1(x)
         x = self.F_act(x)
         x = self.pool1(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.F_act(x)
+        x = self.pool2(x)
 
         x = x.view(N, -1)
 
@@ -103,6 +114,6 @@ class Simple3DCNN(nn.Module):
                 x = self.fc_stage[l](x)
         return x
 
-    def forward(self, x, age):
-        x = self.compute_feature_embedding(x, age)
+    def forward(self, x):
+        x = self.compute_feature_embedding(x)
         return x

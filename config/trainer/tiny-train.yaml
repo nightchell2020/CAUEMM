@@ -7,15 +7,15 @@ search_lr: false
 total_samples: 50000
 
 # log
-num_history: 5
+num_history: 500
 save_model: false
 
 # wandb
 #use_wandb: true
 use_wandb: false
-draw_result: false
+draw_result: true
 watch_model: false
 
 # GPU
-#ddp: true
-ddp: false
+ddp: true
+#ddp: false

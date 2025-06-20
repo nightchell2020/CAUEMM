@@ -8,12 +8,12 @@ import numpy as np
 import torch
 
 
-def mixup_data(x, age, y, alpha, device):
+def mixup_data(x1d,  age, y, alpha, device):
     lam = np.random.beta(alpha, alpha) if alpha > 1e-12 else 1
-    batch_size = x.size()[0]
+    batch_size = x1d.size()[0]
     index = torch.randperm(batch_size).to(device=device)
 
-    mixed_x = lam * x + (1 - lam) * x[index, :]
+    mixed_x = lam * x1d + (1 - lam) * x1d[index, :]
     mixed_age = lam * age + (1 - lam) * age[index]
     y_a, y_b = y, y[index]
     return mixed_x, mixed_age, y_a, y_b, lam, index
