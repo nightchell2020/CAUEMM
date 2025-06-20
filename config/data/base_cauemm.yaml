@@ -4,12 +4,13 @@ dataset_name: cauemm-dataset
 dataset_path: /media/night/dawn/brain/
 eeg_file_format: memmap
 mri_file_format: nii
+
+# preprocessing eeg_configuration
 crop_multiple: 1
 test_crop_multiple: 4
 crop_timing_analysis: false
 load_event: false
 
-# preprocessing eeg_configuration
 sampling_rate: 200
 seq_length: 2048 # 20000  # 200Hz * 10s = 2000 for base
 latency: 2000
@@ -19,7 +20,7 @@ photic: X
 input_norm: datapoint # dataset
 
 # preprocessing mri_configuration
-mri_resize: 64
+mri_resize: 128
 
 # augmentation configuration
 awgn: 0.001

@@ -1,4 +1,4 @@
 _target_: ???
 model: ???
 in_channels: 1
-out_dims: 2
+out_dims: ${concat_dim}

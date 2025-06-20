@@ -509,8 +509,6 @@ def compose_transforms(config, verbose=False):
     resize_size = config.get('mri_resize', 128)
     mri_transform += [MriSpatialPad(spatial_size=(256,256,256))]
     mri_transform += [MriResize(resize_size)]
-    mri_transform += [MriSpatialPad(spatial_size=(256,256,256))]
-    mri_transform += [MriResize(resize_size)]
     mri_transform += [MriToTensor()]
     mri_transform = transforms.Compose(mri_transform)
 
