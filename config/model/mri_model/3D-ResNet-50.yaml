@@ -6,4 +6,5 @@ defaults:
 model: 3D-ResNet-50
 conv_layers: [3, 4, 6, 3]
 block: bottleneck
-minibatch_3090: 32
+#minibatch_4090: 8
+load_pretrained: MedicalNet/3D-ResNet-50

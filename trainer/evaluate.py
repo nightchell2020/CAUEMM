@@ -4,6 +4,8 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import os
 
+from medcam import medcam
+
 # __all__ = []
 
 
@@ -61,7 +63,6 @@ def plot_and_save_eeg_signals(eeg_tensor, sample_idx=0, save_path=None):
     plt.tight_layout()
     plt.subplots_adjust(top=0.95)
 
-    # 5️⃣ 저장 옵션
     if save_path:
         plt.savefig(save_path+"/eeg_plot_"+save_path.split('/')[-1], dpi=300, bbox_inches='tight')
         print(f"✅ EEG plot saved at: {save_path}")
@@ -512,3 +513,10 @@ def check_accuracy_multicrop_extended(model, loader, preprocess, config, aggrega
     throughput = total / total_time
 
     return accuracy, score, target, confusion_matrix, throughput
+
+
+def checkm3dcam(model, data_loader, output_dir="./cam"):
+    model = medcam.inject(model, output_dir=output_dir, save_maps=True)
+    model.eval()
+    for batch in data_loader:
+        output = model(batch)

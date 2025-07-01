@@ -9,20 +9,17 @@ from torch.utils.data.distributed import DistributedSampler
 from torchvision import transforms
 
 from .cauemm_dataset import CauEegMriMultiModalDataset
-from .eeg_pipeline import EegAddGaussianNoiseAge
-from .eeg_pipeline import EegAdditiveGaussianNoise, EegMultiplicativeGaussianNoise
-from .eeg_pipeline import EegChannelDropOut
-from .eeg_pipeline import EegDropChannels, EegChannelDifference
-from .eeg_pipeline import EegNormalizeAge
-from .eeg_pipeline import EegNormalizeMeanStd, EegNormalizePerSignal
-from .eeg_pipeline import EegRandomCrop
-from .eeg_pipeline import EegResample
-from .eeg_pipeline import EegSpectrogram
-from .eeg_pipeline import EegToTensor, EegToDevice
-from .mri_pipeline import emm_collate_fn
-from .mri_pipeline import MriToDevice, MriToTensor
-from .mri_pipeline import MriResize, MriSpatialPad
-from .mri_pipeline import MriNormalize
+from .pipeline import EegAddGaussianNoiseAge, MriSpatialPad, MriResize, MriNormalize, MriToTensor, MriToDevice, \
+    emm_collate_fn
+from .pipeline import EegAdditiveGaussianNoise, EegMultiplicativeGaussianNoise
+from .pipeline import EegChannelDropOut
+from .pipeline import EegDropChannels, EegChannelDifference
+from .pipeline import EegNormalizeAge
+from .pipeline import EegNormalizeMeanStd, EegNormalizePerSignal
+from .pipeline import EegRandomCrop
+from .pipeline import EegResample
+from .pipeline import EegSpectrogram
+from .pipeline import EegToTensor, EegToDevice
 
 
 def load_cauemm_config(dataset_path: str):

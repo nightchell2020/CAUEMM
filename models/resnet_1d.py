@@ -109,13 +109,7 @@ class BottleneckBlock1D(nn.Module):
         width = int(out_channels * (base_channels / 64.0)) * groups
 
         # Both self.conv2 and self.downsample layers downsample the input when stride != 1
-        self.conv1 = nn.Conv1d(
-            in_channels=in_channels,
-            out_channels=width,
-            kernel_size=1,
-            stride=1,
-            bias=False,
-        )
+        self.conv1 = nn.Conv1d(in_channels=in_channels, out_channels=width, kernel_size=1, stride=1, bias=False)
         self.norm1 = norm_layer(width)
         self.act1 = activation()
 
@@ -137,7 +131,7 @@ class BottleneckBlock1D(nn.Module):
             out_channels=out_channels * self.expansion,
             kernel_size=1,
             stride=1,
-            bias=False,
+            bias=False
         )
         self.norm3 = norm_layer(out_channels * self.expansion)
         self.act3 = activation()
@@ -194,10 +188,8 @@ class ResNet1D(nn.Module):
         if block not in ["basic", "bottleneck"]:
             raise ValueError(f"{self.__class__.__name__}.__init__(block) " f"receives one of ['basic', 'bottleneck'].")
 
-        if use_age not in ["fc", "conv", "embedding", "no"]:
-            raise ValueError(
-                f"{self.__class__.__name__}.__init__(use_age) " f"receives one of ['fc', 'conv', 'embedding', 'no']."
-            )
+        if use_age not in ["fc", "conv", "no"]:
+            raise ValueError(f"{self.__class__.__name__}.__init__(use_age) " f"receives one of ['fc', 'conv', 'no'].")
 
         if final_pool not in ["average", "max"] or base_pool not in ["average", "max"]:
             raise ValueError(
@@ -213,10 +205,6 @@ class ResNet1D(nn.Module):
         self.use_age = use_age
         if self.use_age == "conv":
             in_channels += 1
-        elif self.use_age == "embedding":
-            self.age_embedding = torch.nn.Parameter((torch.zeros(1, in_channels, 1)))
-            torch.nn.init.trunc_normal_(self.age_embedding, std=0.02)
-
         self.fc_stages = fc_stages
 
         self.nn_act = get_activation_class(activation, class_name=self.__class__.__name__)
@@ -430,10 +418,6 @@ class ResNet1D(nn.Module):
     def get_output_length(self):
         return self.output_length
 
-    def get_dims_from_last(self, target_from_last: int):
-        l = self.fc_stages - target_from_last
-        return self.fc_stage[l][0].in_features
-
     def get_num_fc_stages(self):
         return self.fc_stages
 
@@ -442,8 +426,6 @@ class ResNet1D(nn.Module):
         if self.use_age == "conv":
             age = age.reshape((N, 1, 1)).expand(N, 1, L)
             x = torch.cat((x, age), dim=1)
-        elif self.use_age == "embedding":
-            x = x + self.age_embedding * age.reshape(N, 1, 1)
 
         x = self.input_stage(x)
 

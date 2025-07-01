@@ -9,17 +9,17 @@ from torch.utils.data.distributed import DistributedSampler
 from torchvision import transforms
 
 from .caueeg_dataset import CauEegDataset
-from .eeg_pipeline import EegAddGaussianNoiseAge
-from .eeg_pipeline import EegAdditiveGaussianNoise, EegMultiplicativeGaussianNoise
-from .eeg_pipeline import EegChannelDropOut
-from .eeg_pipeline import EegDropChannels, EegChannelDifference
-from .eeg_pipeline import EegNormalizeAge
-from .eeg_pipeline import EegNormalizeMeanStd, EegNormalizePerSignal
-from .eeg_pipeline import EegRandomCrop
-from .eeg_pipeline import EegResample
-from .eeg_pipeline import EegSpectrogram
-from .eeg_pipeline import EegToTensor, EegToDevice
-from .eeg_pipeline import eeg_collate_fn
+from .pipeline import EegAddGaussianNoiseAge
+from .pipeline import EegAdditiveGaussianNoise, EegMultiplicativeGaussianNoise
+from .pipeline import EegChannelDropOut
+from .pipeline import EegDropChannels, EegChannelDifference
+from .pipeline import EegNormalizeAge
+from .pipeline import EegNormalizeMeanStd, EegNormalizePerSignal
+from .pipeline import EegRandomCrop
+from .pipeline import EegResample
+from .pipeline import EegSpectrogram
+from .pipeline import EegToTensor, EegToDevice
+from .pipeline import eeg_collate_fn
 
 
 def load_caueeg_config(dataset_path: str):

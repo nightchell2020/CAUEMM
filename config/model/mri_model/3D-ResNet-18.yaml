@@ -6,4 +6,5 @@ defaults:
 model: 3D-ResNet-18
 conv_layers: [2, 2, 2, 2]
 block: basic
-minibatch_3090: 32
+#minibatch_3090: 32
+load_pretrained: MedicalNet/3D-ResNet-18
