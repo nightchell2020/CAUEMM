@@ -4,7 +4,13 @@ import re
 from collections import OrderedDict
 from torchvision.transforms import Compose
 from torch.nn import Sequential
+from pynvml import *
 
+def print_gpu_utilization():
+    nvmlInit()
+    handle = nvmlDeviceGetHandleByIndex(0)
+    info = nvmlDeviceGetMemoryInfo(handle)
+    print(f"GPU memory occupied: {info.used//1024**2} MB.")
 
 def load_sweep_config(config):
     # load default configurations not selected by wandb.sweep

@@ -14,7 +14,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from datasets.cauemm_script import build_emm_dataset_for_train
 from models.utils import count_parameters, get_model_size
 from trainer.train_script import train_script
-from trainer.utils import merge_state_dicts, add_prefix_to_pretrained_weights, edit_MedicalNet_pretrained
+from trainer.utils import merge_state_dicts, add_prefix_to_pretrained_weights, print_gpu_utilization
 
 HYDRA_FULL_ERROR=1
 
@@ -118,14 +118,14 @@ def generate_model(config):
 
 
 def load_pretrained_params(model, config):
-    model_state_checker = model.state_dict()
+    # model_state_checker = model.state_dict()
     eeg_weight = os.path.join(config.get("cwd", ""), f'local/checkpoint/{config["eeg_model"]["load_pretrained"]}/')
     eeg_ckpt = torch.load(os.path.join(eeg_weight, "checkpoint.pt"), map_location=config["device"])
     eeg_state = add_prefix_to_pretrained_weights(eeg_ckpt['model_state'], "eeg_model")
-
+    print_gpu_utilization()
     mri_weight = os.path.join(config.get("cwd", ""), f'local/checkpoint/{config["mri_model"]["load_pretrained"]}/')
     mri_ckpt = torch.load(os.path.join(mri_weight, "checkpoint.pth"), map_location=config["device"])["state_dict"]
-    # mri_ckpt_edit = edit_MedicalNet_pretrained(mri_ckpt["state_dict"])
+    print_gpu_utilization()
 
 
     if eeg_ckpt["config"]["ddp"] == config["ddp"]:  # Both are DDP
@@ -147,7 +147,7 @@ def load_pretrained_params(model, config):
         # }
         # model_state_checker.update(filtered_dict)
         model.module.load_state_dict(ckpt, strict=False)
-
+    print_gpu_utilization()
 
 def prepare_and_run_train(rank, world_size, config):
     # collect some garbage
