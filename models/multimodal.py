@@ -76,7 +76,11 @@ class EMMNet(nn.Module):
 
         return x
 
-    def forward(self, x3d, x1d, age):
-        x = self.compute_feature_embedding(x3d, x1d, age)
+    def forward(self, data):
+
+        x = self.compute_feature_embedding(data[0], data[1], data[2])
         return x
 
+    # def forward(self, x3d, x1d, age):
+    #     x = self.compute_feature_embedding(x3d, x1d, age)
+    #     return x

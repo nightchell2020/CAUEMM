@@ -1,0 +1,10 @@
+defaults:
+  - data: cauemm-abnormal
+  - trainer: base_test
+  - model: multi-modal
+  - _self_
+
+hydra:
+  run:
+    dir: local/hydra/${now:%Y-%m-%d}/${now:%H-%M-%S}
+

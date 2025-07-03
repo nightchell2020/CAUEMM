@@ -2,16 +2,16 @@ run_mode: train
 load_pretrained: True
 
 # reproducibility
-seed: 0
+seed: 1234
 
 # Training iteration
-base_lr: 1.33e-4
+base_lr: 1.90e-03
 search_lr: false
 search_multiplier: 1.0
-lr_scheduler_type: cosine_decay_with_warmup_half # constant_with_decay
+lr_scheduler_type: constant_with_decay  # ['constant_with_decay', 'constant_with_twice_decay', 'transformer_style', 'cosine_decay_with_warmup_half', 'cosine_decay_with_warmup_one_and_half', 'cosine_decay_with_warmup_two_and_half', 'linear_decay_with_warmup']
 warmup_ratio: 0.05
 warmup_min: 3000
-total_samples: 2000
+total_samples: 1200
 # iterations: ???  # automatically decided during runtime
 
 # regularization
@@ -24,7 +24,8 @@ num_history: 500
 save_model: true
 
 # wandb
-use_wandb: false
+use_wandb: true
+#use_wandb: false
 draw_result: true
 watch_model: false
 

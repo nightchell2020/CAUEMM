@@ -95,7 +95,7 @@ def generate_model(config):
     if config.get("ddp", False):
         torch.cuda.set_device(config["device"])
         model.cuda(config["device"])
-        model = DDP(model, device_ids=[config["device"]])
+        model = DDP(model, device_ids=[config["device"]], find_unused_parameters=True)
         config["output_length"] = model.module.get_output_length()
         config["num_params"] = count_parameters(model)
         torch.distributed.barrier()
@@ -122,15 +122,15 @@ def load_pretrained_params(model, config):
     eeg_weight = os.path.join(config.get("cwd", ""), f'local/checkpoint/{config["eeg_model"]["load_pretrained"]}/')
     eeg_ckpt = torch.load(os.path.join(eeg_weight, "checkpoint.pt"), map_location=config["device"])
     eeg_state = add_prefix_to_pretrained_weights(eeg_ckpt['model_state'], "eeg_model")
-    print_gpu_utilization()
+
     mri_weight = os.path.join(config.get("cwd", ""), f'local/checkpoint/{config["mri_model"]["load_pretrained"]}/')
     mri_ckpt = torch.load(os.path.join(mri_weight, "checkpoint.pth"), map_location=config["device"])["state_dict"]
-    print_gpu_utilization()
+
 
 
     if eeg_ckpt["config"]["ddp"] == config["ddp"]:  # Both are DDP
         ckpt = merge_state_dicts(eeg_state, mri_ckpt)
-        model.load_state_dict(ckpt)
+        model.load_state_dict(ckpt, strict=False)
     elif eeg_ckpt["config"]["ddp"]:                 # Only pretrained are DDP
         eeg_model_state_ddp = deepcopy(eeg_ckpt["model_state"])
         eeg_model_state = OrderedDict()
@@ -138,16 +138,11 @@ def load_pretrained_params(model, config):
             name = k[7:]  # remove 'module.' of DataParallel/DistributedDataParallel
             eeg_model_state[name] = v
         ckpt = merge_state_dicts(eeg_model_state, mri_ckpt)
-        model.load_state_dict(ckpt)
+        model.load_state_dict(ckpt, strict=False)
     else:                                           # Pretrained are not DDP
         ckpt = merge_state_dicts(eeg_state, mri_ckpt)
-        # filtered_dict = {
-        #     k: v for k, v in ckpt.items()
-        #     if k in model_state_checker and v.shape == model_state_checker[k].shape
-        # }
-        # model_state_checker.update(filtered_dict)
         model.module.load_state_dict(ckpt, strict=False)
-    print_gpu_utilization()
+
 
 def prepare_and_run_train(rank, world_size, config):
     # collect some garbage
@@ -167,7 +162,7 @@ def prepare_and_run_train(rank, world_size, config):
 
     # generate the model and update some configurations
     model = generate_model(config)
-
+    print_gpu_utilization()
     # load pretrained model if needed
     if "load_pretrained" in config.keys():
         load_pretrained_params(model, config)

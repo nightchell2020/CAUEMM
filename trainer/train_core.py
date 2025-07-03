@@ -8,7 +8,9 @@ from .mixup_util import mixup_data, mixup_criterion
 
 def train_multistep(model, loader, preprocess, optimizer, scheduler, amp_scaler, config, steps):
     model.train()
-
+    if config["eeg_freeze"]:
+        for param in model.module.eeg_model.parameters():
+            param.requires_grad = False
     # init
     i = 0
     cumu_loss = 0
@@ -35,7 +37,7 @@ def train_multistep(model, loader, preprocess, optimizer, scheduler, amp_scaler,
             # mixed precision training if needed
             with autocast('cuda', enabled=config.get("mixed_precision", False)):
                 # forward pass
-                output = model(signal, volume, age)
+                output = model([signal, volume, age])
                 if isinstance(output, tuple):
                     output, output_kd = output
                 else:

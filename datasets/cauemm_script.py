@@ -374,7 +374,7 @@ def calculate_age_statistics(train_loader, verbose=False):
 
     for i, sample in enumerate(train_loader):
         age = sample["age"]
-        std, mean = torch.std_mean(age, dim=-1, keepdim=True)
+        std, mean = torch.std_mean(age, dim=-1, keepdim=True, unbiased=False) # temporaly add unbiased
 
         if i == 0:
             age_means = torch.zeros_like(mean)

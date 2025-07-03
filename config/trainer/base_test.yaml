@@ -4,9 +4,7 @@ run_mode: test
 seed: 0
 
 # load Pretrained weight
-load_pretrained: mae_pretrain_ver2
-minibatch_3090: 1
-
+load_pretrained: 7fk3uzv6
 # iterations: ???  # automatically decided during runtime
 
 # regularization

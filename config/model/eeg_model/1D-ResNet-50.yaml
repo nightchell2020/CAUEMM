@@ -6,5 +6,4 @@ defaults:
 model: 1D-ResNet-50
 conv_layers: [3, 4, 6, 3]
 block: bottleneck
-#minibatch_4090: 128
 load_pretrained: CEEDNet/1D-ResNet-50

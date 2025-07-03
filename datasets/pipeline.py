@@ -908,6 +908,28 @@ def trim_trailing_zeros(a):
 #####################
 #   MRI PREPROCESS  #
 #####################
+class MriDropInvalidRange(nn.Module):
+    """
+    Cut off the invalid area of a 3D volume
+    """
+    def __init__(self):
+        super().__init__()
+
+    def forward(self,sample):
+        volume = sample['volume']
+
+        if volume.ndim != 3:
+            raise ValueError(f"Expected 3D volume, got shape {volume.shape}")
+
+        zero_value = volume[0, 0, 0]
+        non_zeros_idx = np.where(volume != zero_value)
+
+        [max_z, max_h, max_w] = np.max(np.array(non_zeros_idx), axis=1)
+        [min_z, min_h, min_w] = np.min(np.array(non_zeros_idx), axis=1)
+
+        sample['volume'] = volume[min_z:max_z, min_h:max_h, min_w:max_w]
+        return sample
+
 
 class MriSpatialPad(nn.Module):
     """
@@ -917,10 +939,10 @@ class MriSpatialPad(nn.Module):
 
     def __init__(self, spatial_size, mode='constant', method='symmetric', value=0):
         super().__init__()
-        self.spatial_size = spatial_size  # e.g., [128, 128, 128]
-        self.mode = mode  # 'constant', 'reflect', etc. (from torch.nn.functional.pad)
-        self.method = method  # 'symmetric' or 'end'
-        self.value = value  # padding value for 'constant' mode
+        self.spatial_size = spatial_size    # e.g., [128, 128, 128]
+        self.mode = mode                    # 'constant', 'reflect', etc. (from torch.nn.functional.pad)
+        self.method = method                # 'symmetric' or 'end'
+        self.value = value                  # padding value for 'constant' mode
 
     def forward(self, sample):
         volume = sample['volume']
@@ -976,7 +998,7 @@ class MriResize(nn.Module):
             align_corners (bool): Align corners when interpolating. Default: False.
         """
         super().__init__()
-        self.spatial_size = (spatial_size,spatial_size,spatial_size)
+        self.spatial_size = (spatial_size, spatial_size, spatial_size)
         self.mode = mode
         self.align_corners = align_corners
 
@@ -1003,6 +1025,21 @@ class MriResize(nn.Module):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{make_variable_repr(self.__dict__)}"
 
+class MriCenterCrop(nn.Module):
+    def __init__(self, crop_size):
+        super().__init__()
+        self.crop_size = crop_size
+
+    def forward(self, sample):
+        volume = sample['volume']
+        if isinstance(volume, np.ndarray):
+            volume = torch.from_numpy(volume)
+        if volume.ndim != 3:
+            raise ValueError(f"Expected 3D volume, got shape {volume.shape}")
+        [img_d, img_h, img_w] = volume.shape
+
+        cropped = 1
+        return sample
 
 #####################
 #   MRI TRANSFORM   #
