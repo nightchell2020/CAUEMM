@@ -1,0 +1,12 @@
+defaults:
+  - base_model
+  - _self_
+
+_target_: models.mstnet.ImageEncoder
+model: ImageEncoder
+
+in_channels: 1
+out_dims: ${concat_dim}
+image_size: 128
+activation: relu
+minibatch_4090: 32
