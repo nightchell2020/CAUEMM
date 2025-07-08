@@ -1,6 +1,6 @@
 defaults:
-#  - data: cauemm-abnormal
-  - data: cauemm-dementia
+  - data: cauemm-abnormal
+#  - data: cauemm-dementia
 #  - trainer: base_test
 #  - trainer: tiny-train
 #  - trainer: base_train

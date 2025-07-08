@@ -2,7 +2,9 @@
 import torch
 import torch.nn.functional as F
 from torch.amp import autocast
+import torchvision.ops as ops
 from .mixup_util import mixup_data, mixup_criterion
+from .utils import label_to_one_hot_label
 
 
 
@@ -63,6 +65,11 @@ def train_multistep(model, loader, preprocess, optimizer, scheduler, amp_scaler,
                     )
                 elif config["criterion"] == "svm":
                     loss = mixup_criterion(F.multi_margin_loss, output, y1, y2, lam)
+                elif config["criterion"] == 'focal':
+                    y1_oh = F.one_hot(y1, num_classes=output.size(dim=1))
+                    y2_oh = F.one_hot(y2, num_classes=output.size(dim=1))
+
+                    loss = mixup_criterion(ops.focal_loss.sigmoid_focal_loss, output, y1_oh.float(), y2_oh.float(), lam, reduction='mean')
                 else:
                     raise ValueError("config['criterion'] must be set to one of ['cross-entropy', 'multi-bce', 'svm']")
 

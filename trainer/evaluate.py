@@ -115,6 +115,8 @@ def logit_to_prob(logit, config):
         score = torch.sigmoid(logit)
     elif config["criterion"] == "svm":
         score = logit
+    elif config["criterion"] == "focal":
+        score = logit
     else:
         raise ValueError(f"logit_to_prob(): cannot parse config['criterion']={config['criterion']}.")
     return score

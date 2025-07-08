@@ -1,6 +1,9 @@
 import time
 import wandb
 import re
+import torch
+import torch.nn.functional as F
+
 from collections import OrderedDict
 from torchvision.transforms import Compose
 from torch.nn import Sequential
@@ -55,6 +58,13 @@ class TimeElapsed(object):
         self.counter += 1
         return time_str
 
+def label_to_one_hot_label(
+        labels: torch.Tensor,
+        num_classes: int,
+    ):
+    shape = labels.shape
+    one_hot_label = F.one_hot(labels, num_classes=num_classes)
+    return one_hot_label
 
 def add_prefix_to_pretrained_weights(state_dict, prefix):
     new_state_dict = OrderedDict()

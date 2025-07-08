@@ -8,7 +8,7 @@ seq_length: ${seq_length}
 block: ???
 conv_layers: ???
 base_channels: 64
-use_age: fc
+use_age: conv
 fc_stages: 2
 dropout: 0.1  # No dropout for the original implementation (applied only to FC layers)
 activation: mish  # relu for the original

@@ -20,4 +20,5 @@ def mixup_data(x1d,  age, y, alpha, device):
 
 
 def mixup_criterion(criterion, pred, y_a, y_b, lam, **kwargs):
-    return lam * criterion(pred, y_a, **kwargs) + (1 - lam) * criterion(pred, y_b, **kwargs)
+    loss = lam * criterion(pred, y_a, **kwargs) + (1 - lam) * criterion(pred, y_b, **kwargs)
+    return loss

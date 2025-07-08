@@ -10,7 +10,7 @@ from torchvision import transforms
 
 from .cauemm_dataset import CauEegMriMultiModalDataset
 from .pipeline import EegAddGaussianNoiseAge, MriSpatialPad, MriResize, MriNormalize, MriToTensor, MriToDevice, \
-    emm_collate_fn
+    emm_collate_fn, MriCenterCrop, MriDropInvalidRange
 from .pipeline import EegAdditiveGaussianNoise, EegMultiplicativeGaussianNoise
 from .pipeline import EegChannelDropOut
 from .pipeline import EegDropChannels, EegChannelDifference
@@ -505,6 +505,7 @@ def compose_transforms(config, verbose=False):
     #######################
     resize_size = config.get('mri_resize', 128)
     mri_transform += [MriSpatialPad(spatial_size=(256,256,256))]
+    mri_transform += [MriCenterCrop(160)]
     mri_transform += [MriResize(resize_size)]
     mri_transform += [MriToTensor()]
     mri_transform = transforms.Compose(mri_transform)

@@ -1,4 +1,5 @@
 from typing import Optional
+from random import random
 import time
 from packaging import version
 
@@ -908,6 +909,11 @@ def trim_trailing_zeros(a):
 #####################
 #   MRI PREPROCESS  #
 #####################
+"""
+Since the size of the MRI volume and the location of the cerebral cortex are all different, 
+Resizing is performed while removing unnecessary parts and maintaining the ratio.
+"""
+
 class MriDropInvalidRange(nn.Module):
     """
     Cut off the invalid area of a 3D volume
@@ -1038,7 +1044,16 @@ class MriCenterCrop(nn.Module):
             raise ValueError(f"Expected 3D volume, got shape {volume.shape}")
         [img_d, img_h, img_w] = volume.shape
 
-        cropped = 1
+        Z_max = int(np.min([int((img_d - (img_d - self.crop_size)/2)), img_d]))      # 256 - (256-160) /2 = 208
+        Y_max = int(np.min([int((img_h - (img_h - self.crop_size)/2)), img_h]))
+        X_max = int(np.min([int((img_w - (img_w - self.crop_size)/2)), img_w]))
+
+        Z_min = int(np.max([int(img_d - self.crop_size)/2, 0]))                     # (256-160)/2 = 48
+        Y_min = int(np.max([int(img_h - self.crop_size)/2, 0]))
+        X_min = int(np.max([int(img_w - self.crop_size)/2, 0]))
+
+        cropped = volume[Z_min: Z_max, Y_min: Y_max, X_min: X_max]
+        sample['volume'] = cropped
         return sample
 
 #####################

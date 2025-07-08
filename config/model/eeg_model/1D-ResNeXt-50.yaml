@@ -5,6 +5,7 @@ defaults:
 
 model: 1D-ResNeXt-50
 conv_layers: [3, 4, 6, 3]
+in_channels: 20
 block: bottleneck
 groups: 32
 use_age: conv
