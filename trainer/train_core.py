@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.amp import autocast
 import torchvision.ops as ops
 from .mixup_util import mixup_data, mixup_criterion
-from .utils import label_to_one_hot_label
+
 
 
 

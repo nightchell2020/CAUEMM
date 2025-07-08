@@ -943,7 +943,7 @@ class MriSpatialPad(nn.Module):
     Supports 'symmetric' or 'end' padding mode.
     """
 
-    def __init__(self, spatial_size, mode='constant', method='symmetric', value=0):
+    def __init__(self, spatial_size=256, mode='constant', method='symmetric', value=0):
         super().__init__()
         self.spatial_size = spatial_size    # e.g., [128, 128, 128]
         self.mode = mode                    # 'constant', 'reflect', etc. (from torch.nn.functional.pad)
@@ -960,7 +960,8 @@ class MriSpatialPad(nn.Module):
 
         # Get original shape
         D, H, W = volume.shape
-        target_D, target_H, target_W = self.spatial_size
+        ideal_size = max(D, H, W)
+        target_D, target_H, target_W = ideal_size
 
         pad_d = max(target_D - D, 0)
         pad_h = max(target_H - H, 0)

@@ -10,8 +10,8 @@ lr_scheduler_list = [
     "cosine_decay_with_warmup_one_and_half",
     "cosine_decay_with_warmup_two_and_half",
     "linear_decay_with_warmup",
+    "cosine_annealing_with_warmup",
 ]
-
 
 def get_constant_with_decay_scheduler(optimizer: Optimizer, iterations: int, last_epoch: int = -1):
     return lr_scheduler.StepLR(optimizer, step_size=round(iterations * 0.8), gamma=0.1, last_epoch=last_epoch)
@@ -60,6 +60,13 @@ def get_linear_decay_with_warmup(optimizer: Optimizer, warmup_steps: int, iterat
 
     return lr_scheduler.LambdaLR(optimizer, linear_decay_with_warmup, last_epoch)
 
+def get_cosine_annealing_with_warmup(optimizer: Optimizer, warmup_steps: int, iterations: int, last_epoch: int = -1):
+    def cosine_annealing_with_warmup(step:int):
+        if step <= warmup_steps:
+            return step / max(1.0, float(warmup_steps))
+        return lr_scheduler.CosineAnnealingLR(optimizer, iterations, last_epoch=last_epoch)
+
+    return lr_scheduler.LambdaLR(optimizer, cosine_annealing_with_warmup, last_epoch)
 
 def get_lr_scheduler(
     optimizer: Optimizer,
@@ -102,6 +109,13 @@ def get_lr_scheduler(
         )
     elif scheduler_type == "linear_decay_with_warmup":
         return get_linear_decay_with_warmup(
+            optimizer=optimizer,
+            warmup_steps=warmup_steps,
+            iterations=iterations,
+            last_epoch=last_epoch,
+        )
+    elif scheduler_type == "cosine_annealing_with_warmup":
+        return get_cosine_annealing_with_warmup(
             optimizer=optimizer,
             warmup_steps=warmup_steps,
             iterations=iterations,
