@@ -961,7 +961,7 @@ class MriSpatialPad(nn.Module):
         # Get original shape
         D, H, W = volume.shape
         ideal_size = max(D, H, W)
-        target_D, target_H, target_W = ideal_size
+        target_D, target_H, target_W = ideal_size, ideal_size, ideal_size
 
         pad_d = max(target_D - D, 0)
         pad_h = max(target_H - H, 0)

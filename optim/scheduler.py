@@ -64,7 +64,9 @@ def get_cosine_annealing_with_warmup(optimizer: Optimizer, warmup_steps: int, it
     def cosine_annealing_with_warmup(step:int):
         if step <= warmup_steps:
             return step / max(1.0, float(warmup_steps))
-        return lr_scheduler.CosineAnnealingLR(optimizer, iterations, last_epoch=last_epoch)
+        progress = float(step - warmup_steps) / float(max(1, iterations - warmup_steps))
+        return 0.5 * (1.0 + math.cos(math.pi * progress))
+        # return lr_scheduler.CosineAnnealingLR(optimizer, T_max=iterations, last_epoch=last_epoch)
 
     return lr_scheduler.LambdaLR(optimizer, cosine_annealing_with_warmup, last_epoch)
 
