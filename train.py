@@ -17,6 +17,8 @@ from trainer.train_script import train_script
 from trainer.utils import merge_state_dicts, add_prefix_to_pretrained_weights, print_gpu_utilization
 
 HYDRA_FULL_ERROR=1
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
 
 def check_device_env(config):
@@ -164,8 +166,8 @@ def prepare_and_run_train(rank, world_size, config):
     model = generate_model(config)
     print_gpu_utilization()
     # load pretrained model if needed
-    if "load_pretrained" in config.keys():
-        load_pretrained_params(model, config)
+    #if "load_pretrained" in config.keys():
+     #   load_pretrained_params(model, config)
 
     # train
     train_script(

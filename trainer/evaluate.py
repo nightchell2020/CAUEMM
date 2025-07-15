@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import os
-
+import sklearn
 from medcam import medcam
 
 # __all__ = []
@@ -224,6 +224,7 @@ def check_accuracy_extended(model, loader, preprocess, config, repeat=1, dummy=1
     total_time = 0.0
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
+    preds = []
 
     # warm-up using dummy round
     for k in range(dummy):
@@ -253,13 +254,26 @@ def check_accuracy_extended(model, loader, preprocess, config, repeat=1, dummy=1
             pred = s.argmax(dim=-1)
             confusion_matrix += calculate_confusion_matrix(pred, y, num_classes=config["out_dims"])
 
+            # for other metrics
+            preds += pred
+
             # total samples
             total += pred.shape[0]
 
     accuracy = confusion_matrix.trace() / confusion_matrix.sum() * 100.0
     throughput = total / total_time
 
-    return accuracy, score, target, confusion_matrix, throughput
+    # Added 250715
+    preds = torch.tensor(preds)
+    Precision = sklearn.metrics.precision_score(target, pred, average='marco')
+    Recall = sklearn.metrics.recall_score(target, pred, average='macro')
+    F1 = sklearn.metrics.f1_score(target, pred, average='macro')
+    # AUROC = sklearn.metrics.roc_auc_score(target_prob, pred_prob, average='macro', multi_class='ovr')
+    # AUPRC = sklearn.metrics.average_precision_score(target_prob, pred_prob, average='macro')
+
+    # return accuracy, score, target, confusion_matrix, throughput
+    return accuracy, score, target, confusion_matrix, throughput, Precision, Recall, F1
+
 
 def check_signal_IL(model, loader, preprocess, config, repeat=1, dummy=1):
     # for confusion matrix

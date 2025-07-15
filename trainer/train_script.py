@@ -34,11 +34,11 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
     # wandb init
     if main_process and config["use_wandb"]:
         if config.get("resume", None) is None:
-            wandb.init(project=config.get("project", "CAUEMM"), reinit=True)
+            wandb.init(project=config.get("project", "CAUEMM_dementia_v2"), reinit=True)
             wandb.run.name = wandb.run.id
         else:
             wandb.init(
-                project=config.get("project", "CAUEMM"),
+                project=config.get("project", "CAUEMM_dementia_v2"),
                 id=config["resume"],
                 resume="must",
             )
@@ -102,7 +102,7 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
         # directory to save
         run_name = wandb.run.name if config["use_wandb"] else datetime.now().strftime("%Y-%m%d-%H%M")
         if config["save_model"]:
-            save_path = os.path.join(config.get("cwd", ""), f"local/checkpoint/{run_name}/")
+            save_path = os.path.join(config.get("cwd", ""), f"local/checkpoint/Exp/{run_name}/")
             os.makedirs(save_path, exist_ok=True)
 
     # train and validation routine
@@ -196,7 +196,7 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
             test_result = last_test_result
 
         model.load_state_dict(model_state)
-        test_acc, score, target, test_confusion, throughput = test_result
+        test_acc, score, target, test_confusion, throughput, precision, recall, f1_score = test_result
 
         # calculate the test accuracy of the final model using multiple crop averaging
         multicrop_test_acc = check_accuracy_multicrop(
@@ -233,6 +233,9 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
                     ),
                     "Confusion Matrix (Array)": test_confusion,
                     "Multi-Crop Test Accuracy": multicrop_test_acc,
+                    "Precision": precision,
+                    "Recall": recall,
+                    "f1 score": f1_score
                 }
             )
         else:
@@ -247,6 +250,9 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
                     ),
                     "Confusion Matrix (Array)": test_confusion,
                     "Multi-Crop Test Accuracy": multicrop_test_acc,
+                    "Precision": precision,
+                    "Recall": recall,
+                    "f1 score": f1_score
                 }
             )
             print(f"\n{'*'*92}\n")
