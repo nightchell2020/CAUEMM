@@ -756,7 +756,7 @@ class EegSpectrogram(torch.nn.Module):
     """Transform the multichannel 1D sequence as multichannel 2D image using short-time fourier transform
     (a.k.a. Spectrogram)"""
 
-    def __init__(self, n_fft, complex_mode="as_real", **kwargs):
+    def __init__(self, n_fft, complex_mode="power", **kwargs): # mode=as_real
         super().__init__()
         if complex_mode not in ("as_real", "power", "remove"):
             raise ValueError('complex_mode must be set to one of ("as_real", "power", "remove")')
@@ -775,7 +775,7 @@ class EegSpectrogram(torch.nn.Module):
                 if i == 0:
                     if self.complex_mode == "as_real":
                         x_out = torch.zeros(
-                            (N, 2 * xf.shape[0], xf.shape[1], xf.shape[2]),
+                            (N, 2 * xf.shape[0], xf.shape[1], xf.shape[2]),     ###
                             dtype=x.dtype,
                             device=x.device,
                         )

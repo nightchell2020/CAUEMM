@@ -7,3 +7,9 @@ model: 2D-ResNet-18
 conv_layers: [2, 2, 2, 2]
 block: basic
 minibatch_3090: 256
+load_pretrained: CEEDNet/2D-ResNet-18
+use_age: fc
+in_channels: 20
+fc_stages: 2
+activation: relu  # relu for the original
+seq_len_2d: [64,64]

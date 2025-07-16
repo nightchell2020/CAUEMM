@@ -8,21 +8,13 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torchvision import transforms
 
-from .cauemm_dataset import CauEegMriMultiModalDataset
+from .caumri_dataset import CauMriDataset
 from .pipeline import EegAddGaussianNoiseAge, MriSpatialPad, MriResize, MriNormalize, MriToTensor, MriToDevice, \
     emm_collate_fn, MriCenterCrop, MriDropInvalidRange
-from .pipeline import EegAdditiveGaussianNoise, EegMultiplicativeGaussianNoise
-from .pipeline import EegChannelDropOut
-from .pipeline import EegDropChannels, EegChannelDifference
-from .pipeline import EegNormalizeAge
-from .pipeline import EegNormalizeMeanStd, EegNormalizePerSignal
-from .pipeline import EegRandomCrop
-from .pipeline import EegResample
-from .pipeline import EegSpectrogram
-from .pipeline import EegToTensor, EegToDevice
 
 
-def load_cauemm_config(dataset_path: str):
+
+def load_caumri_config(dataset_path: str):
     """Load the configuration of the CAUMRI dataset.
 
     Args:
@@ -45,7 +37,7 @@ def load_cauemm_config(dataset_path: str):
     return config
 
 
-def load_cauemm_full_dataset(
+def load_caumri_full_dataset(
         dataset_path: str,
         load_event: bool = True,
         eeg_file_format: str = "memmap",
@@ -75,11 +67,10 @@ def load_cauemm_full_dataset(
         )
         raise
 
-    emm_dataset = CauEegMriMultiModalDataset(
+    emm_dataset = CauMriDataset(
         dataset_path,
         annotation["data"],
         load_event=load_event,
-        eeg_file_format=eeg_file_format,
         transform=transform,
     )
 
@@ -87,7 +78,7 @@ def load_cauemm_full_dataset(
 
     return config, emm_dataset
 
-def load_cauemm_task_datasets(
+def load_caumri_task_datasets(
         dataset_path: str,
         task: str,
         load_event: bool = True,
@@ -116,7 +107,7 @@ def load_cauemm_task_datasets(
         "dementia-no-overlap",
     ]:
         raise ValueError(
-            f"load_cauemm_task_datasets(task) receives the invalid task name: {task}. "
+            f"load_caumri_task_datasets(task) receives the invalid task name: {task}. "
             f"Make sure the task name is correct."
         )
 
@@ -127,35 +118,32 @@ def load_cauemm_task_datasets(
         ) as json_file:
             task_dict = json.load(json_file)
 
-        train_dataset = CauEegMriMultiModalDataset(
+        train_dataset = CauMriDataset(
             dataset_path,
             task_dict["train_split"],
             load_event=load_event,
-            eeg_file_format=eeg_file_format,
             transform=transform,
         )
-        val_dataset = CauEegMriMultiModalDataset(
+        val_dataset = CauMriDataset(
             dataset_path,
             task_dict["validation_split"],
             load_event=load_event,
-            eeg_file_format=eeg_file_format,
             transform=transform,
         )
-        test_dataset = CauEegMriMultiModalDataset(
+        test_dataset = CauMriDataset(
             dataset_path,
             task_dict["test_split"],
             load_event=load_event,
-            eeg_file_format=eeg_file_format,
             transform=transform,
         )
     except FileNotFoundError as e:
         print(
-            f"ERROR: load_cauemm_task_datasets(dataset_path={dataset_path}) encounters an error of {e}. "
+            f"ERROR: load_caumri_task_datasets(dataset_path={dataset_path}) encounters an error of {e}. "
             f"Make sure the dataset path is correct."
         )
         raise
     except ValueError as e:
-        print(f"ERROR: load_cauemm_task_datasets(file_format={eeg_file_format}) encounters an error of {e}.")
+        print(f"ERROR: load_caumri_task_datasets(file_format={eeg_file_format}) encounters an error of {e}.")
         raise
 
     config = {
@@ -179,12 +167,12 @@ def load_cauemm_task_datasets(
 
         if torch.is_tensor(train_dataset[0]):
             print(
-                "train signal shape:",
+                "train volume shape:",
                 train_dataset[0]["volume"].shape,
             )
         else:
             print(
-                "train signal shape:",
+                "train volume shape:",
                 train_dataset[0]["volume"][0].shape,
             )
 
@@ -207,7 +195,7 @@ def load_cauemm_task_datasets(
     )
 
 
-def load_cauemm_task_split(
+def load_caumri_task_split(
         dataset_path: str,
         task: str,
         split: str,
@@ -261,11 +249,10 @@ def load_cauemm_task_split(
         "train_split",
         "training_split",
     ]:
-        dataset = CauEegMriMultiModalDataset(
+        dataset = CauMriDataset(
             dataset_path,
             task_dict["train_split"],
             load_event=load_event,
-            eeg_file_format=eeg_file_format,
             transform=transform,
         )
     elif split in [
@@ -274,24 +261,22 @@ def load_cauemm_task_split(
         "val_split",
         "validation_split",
     ]:
-        dataset = CauEegMriMultiModalDataset(
+        dataset = CauMriDataset(
             dataset_path,
             task_dict["validation_split"],
             load_event=load_event,
-            eeg_file_format=eeg_file_format,
             transform=transform,
         )
     elif split in ["test", "test_split"]:
-        dataset = CauEegMriMultiModalDataset(
+        dataset = CauMriDataset(
             dataset_path,
             task_dict["test_split"],
             load_event=load_event,
-            eeg_file_format=eeg_file_format,
             transform=transform,
         )
     else:
         raise ValueError(
-            f"ERROR: load_cauemm_task_split(split) needs string among of " f"'train', 'validation', and 'test'"
+            f"ERROR: load_caumri_task_split(split) needs string among of " f"'train', 'validation', and 'test'"
         )
 
     config = {
@@ -422,80 +407,9 @@ def calculate_stft_params(
 
     return n_fft, hop_length, seq_len_2d
 
-
+#ToDo : transforms...
 def compose_transforms(config, verbose=False):
-    eeg_transform = []
     mri_transform = []
-    eeg_transform_multicrop = []
-
-    #########################
-    #   SIGNAL TRANSFORM    #
-    #########################
-    eeg_transform += [
-        EegRandomCrop(
-            crop_length=config.get("crop_length", config["seq_length"]),
-            length_limit=config.get("signal_length_limit", 10 ** 7),
-            multiple=config.get("crop_multiple", 1),
-            latency=config.get("latency", 0),
-            segment_simulation=config.get("segment_simulation", False),
-            return_timing=config.get("crop_timing_analysis", False),
-            reject_events=config.get("reject_events", False),
-        )
-    ]
-    eeg_transform_multicrop += [
-        EegRandomCrop(
-            crop_length=config.get("crop_length", config["seq_length"]),
-            length_limit=config.get("signal_length_limit", 10 ** 7),
-            multiple=config.get("test_crop_multiple", 8),
-            latency=config.get("latency", 0),
-            segment_simulation=config.get("segment_simulation", False),
-            return_timing=config.get("crop_timing_analysis", False),
-            reject_events=config.get("reject_events", False),
-        )
-    ]
-
-    if config.get("channel_difference", None):
-        channel_difference_list = config.get("channel_difference", None)
-        if len(channel_difference_list) != 2:
-            raise ValueError(f"config['channel_difference'] should be the list of length 2.")
-        eeg_transform += [EegChannelDifference(channel_difference_list[0], channel_difference_list[1])]
-        eeg_transform_multicrop += [EegChannelDifference(channel_difference_list[0], channel_difference_list[1])]
-        signal_header = config["signal_header"]
-        config["montage"] = " - ".join([signal_header[i].split("-")[0] for i in channel_difference_list])
-    else:
-        channel_reduction_list = config.get("channel_reduction_list", [])
-
-        if config.get("EKG", None) not in [
-            "O",
-            "X",
-            None,
-        ]:
-            raise ValueError(f"config['EKG'] should be one of ['O', 'X', None].")
-        elif config.get("EKG", None) == "X":
-            channel_reduction_list.append(config["signal_header"].index("EKG"))
-
-        if config.get("photic", None) not in [
-            "O",
-            "X",
-            None,
-        ]:
-            raise ValueError(f"config['photic'] should be one of ['O', 'X', None].")
-        elif config.get("photic", None) == "X":
-            channel_reduction_list.append(config["signal_header"].index("Photic"))
-
-        channel_reduction_set = set(channel_reduction_list)
-
-        eeg_transform += [EegDropChannels(sorted([*channel_reduction_set]))]
-        eeg_transform_multicrop += [EegDropChannels(sorted([*channel_reduction_set]))]
-
-    ### Numpy to Tensor ###
-    eeg_transform += [EegToTensor()]
-    eeg_transform_multicrop += [EegToTensor()]
-
-    ### Transform-Compose ###
-    eeg_transform = transforms.Compose(eeg_transform)
-    eeg_transform_multicrop = transforms.Compose(eeg_transform_multicrop)
-
     #############################################
     #              IMAGE TRANSFORM              #
     #############################################
@@ -520,203 +434,11 @@ def compose_transforms(config, verbose=False):
     # mri_transform += [MriToTensor()]
     # mri_transform = transforms.Compose(mri_transform)
 
-    if verbose:
-        print("eeg_transform:", eeg_transform)
-        print("\n" + "-" * 100 + "\n")
-
-        print(
-            "eeg_transform_multicrop:",
-            eeg_transform_multicrop,
-        )
-        print("\n" + "-" * 100 + "\n")
-        print()
-
-        print("mri_transform:", eeg_transform)
-        print("\n" + "-" * 100 + "\n")
-        print()
-
-    return eeg_transform, eeg_transform_multicrop, mri_transform
+    return mri_transform
 
 def compose_preprocess(config, train_loader, verbose=True):
-    eeg_preprocess_train = []
-    eeg_preprocess_test = []
     mri_preprocess_train = []
     mri_preprocess_test = []
-
-    #####################
-    #   EEG PREPROCESS  #
-    #####################
-    eeg_preprocess_train += [EegToDevice(device=config["device"])]
-    eeg_preprocess_test += [EegToDevice(device=config["device"])]
-
-    if "crop_length" not in config:
-        config["crop_length"] = config["seq_length"]
-    sampling_rate = config.get("sampling_rate", 200)
-    config["seq_length"] = math.ceil(config["crop_length"] * config.get("resample", sampling_rate) / sampling_rate)
-
-    if config.get("resample", None):
-        eeg_preprocess_train += [EegResample(orig_freq=sampling_rate, new_freq=config["resample"]).to(config["device"])]
-        eeg_preprocess_test += [EegResample(orig_freq=sampling_rate, new_freq=config["resample"]).to(config["device"])]
-
-    if "age_mean" not in config or "age_std" not in config:
-        (
-            config["age_mean"],
-            config["age_std"],
-        ) = calculate_age_statistics(train_loader, verbose=False)
-    eeg_preprocess_train += [
-        EegNormalizeAge(
-            mean=config["age_mean"],
-            std=config["age_std"],
-        )
-    ]
-    eeg_preprocess_test += [
-        EegNormalizeAge(
-            mean=config["age_mean"],
-            std=config["age_std"],
-        )
-    ]
-
-    if config.get("run_mode", None) == "eval":
-        pass
-    elif config.get("awgn_age") is None or config["awgn_age"] <= 1e-12:
-        pass
-    elif config["awgn_age"] > 0.0:
-        eeg_preprocess_train += [EegAddGaussianNoiseAge(mean=0.0, std=config["awgn_age"])]
-    else:
-        raise ValueError(f"config['awgn_age'] have to be None or a positive floating point number")
-
-    ##################################
-    # data normalization (1D signal) #
-    ##################################
-    if config["input_norm"] == "dataset":
-        if "signal_mean" not in config or "signal_std" not in config:
-            (
-                config["signal_mean"],
-                config["signal_std"],
-            ) = calculate_signal_statistics(
-                train_loader,
-                repeats=5,
-                verbose=False,
-            )
-        eeg_preprocess_train += [
-            EegNormalizeMeanStd(
-                mean=config["signal_mean"],
-                std=config["signal_std"],
-            )
-        ]
-        eeg_preprocess_test += [
-            EegNormalizeMeanStd(
-                mean=config["signal_mean"],
-                std=config["signal_std"],
-            )
-        ]
-    elif config["input_norm"] == "datapoint":
-        eeg_preprocess_train += [EegNormalizePerSignal()]
-        eeg_preprocess_test += [EegNormalizePerSignal()]
-    elif config["input_norm"] == "no":
-        pass
-    else:
-        raise ValueError(f"config['input_norm'] have to be set to one of ['dataset', 'datapoint', 'no']")
-
-    ###############################
-    # dropout channel (1D signal) #
-    ###############################
-    if config.get("channel_dropout", 0.0) > 1e-8:
-        eeg_preprocess_train += [EegChannelDropOut(p=config["channel_dropout"])]
-
-    ##############################################################
-    # multiplicative Gaussian noise for augmentation (1D signal) #
-    ##############################################################
-    if config.get("run_mode", None) == "eval":
-        pass
-    elif config.get("mgn") is None or config["mgn"] <= 1e-12:
-        pass
-    elif config["mgn"] > 0.0:
-        eeg_preprocess_train += [EegMultiplicativeGaussianNoise(mean=0.0, std=config["mgn"])]
-    else:
-        raise ValueError(f"config['mgn'] have to be None or a positive floating point number")
-
-    ########################################################
-    # additive Gaussian noise for augmentation (1D signal) #
-    ########################################################
-    if config.get("run_mode", None) == "eval":
-        pass
-    elif config.get("awgn") is None or config["awgn"] <= 1e-12:
-        pass
-    elif config["awgn"] > 0.0:
-        eeg_preprocess_train += [EegAdditiveGaussianNoise(mean=0.0, std=config["awgn"])]
-    else:
-        raise ValueError(f"config['awgn'] have to be None or a positive floating point number")
-
-    ###################
-    # STFT (1D -> 2D) #
-    ###################
-    if config.get("eeg_model")["model"].startswith("2D"):
-        stft_params = config.pop("stft_params", {})
-        (
-            n_fft,
-            hop_length,
-            seq_len_2d,
-        ) = calculate_stft_params(
-            seq_length=config.get("crop_length", config["seq_length"]),
-            n_fft=stft_params.pop("n_fft", 0),
-            hop_ratio=stft_params.pop("hop_ratio", 1 / 4.0),
-            resample_ratio=config.get("resample", sampling_rate) / sampling_rate,
-            verbose=False,
-        )
-        config["stft_params"] = {
-            "n_fft": n_fft,
-            "hop_length": hop_length,
-            **stft_params,
-        }
-        config["seq_len_2d"] = seq_len_2d
-
-        eeg_preprocess_train += [EegSpectrogram(**config["stft_params"])]
-        eeg_preprocess_test += [EegSpectrogram(**config["stft_params"])]
-
-    ######################################
-    ### data normalization (2D signal) ###
-    ######################################
-    if config.get("eeg_model")["model"].startswith("2D"):
-        if config["input_norm"] == "dataset":
-            if "signal_2d_mean" not in config or "signal_2d_std" not in config:
-                preprocess_temp = transforms.Compose(eeg_preprocess_train)
-                preprocess_temp = torch.nn.Sequential(*preprocess_temp.transforms)
-
-                (
-                    signal_2d_mean,
-                    signal_2d_std,
-                ) = calculate_signal_statistics(
-                    train_loader,
-                    preprocess_train=preprocess_temp,
-                    repeats=5,
-                    verbose=False,
-                )
-                config["signal_2d_mean"] = signal_2d_mean
-                config["signal_2d_std"] = signal_2d_std
-
-            eeg_preprocess_train += [
-                EegNormalizeMeanStd(
-                    mean=config["signal_2d_mean"],
-                    std=config["signal_2d_std"],
-                )
-            ]
-            eeg_preprocess_test += [
-                EegNormalizeMeanStd(
-                    mean=config["signal_2d_mean"],
-                    std=config["signal_2d_std"],
-                )
-            ]
-
-        elif config["input_norm"] == "datapoint":
-            eeg_preprocess_train += [EegNormalizePerSignal()]
-            eeg_preprocess_test += [EegNormalizePerSignal()]
-
-        elif config["input_norm"] == "no":
-            pass
-
-        else:
-            raise ValueError(f"config['input_norm'] have to be set to one of ['dataset', 'datapoint', 'no']")
 
     #####################
     #   MRI PREPROCESS  #
@@ -741,38 +463,18 @@ def compose_preprocess(config, train_loader, verbose=True):
     #######################
     # Compose All at Once #
     #######################
-    eeg_preprocess_train = transforms.Compose(eeg_preprocess_train)
-    eeg_preprocess_train = torch.nn.Sequential(*eeg_preprocess_train.transforms)
-
-    eeg_preprocess_test = transforms.Compose(eeg_preprocess_test)
-    eeg_preprocess_test = torch.nn.Sequential(*eeg_preprocess_test.transforms)
-
     mri_preprocess_train = transforms.Compose(mri_preprocess_train)
     mri_preprocess_train = torch.nn.Sequential(*mri_preprocess_train.transforms)
 
     mri_preprocess_test = transforms.Compose(mri_preprocess_test)
     mri_preprocess_test = torch.nn.Sequential(*mri_preprocess_test.transforms)
 
-    preprocess_train = (eeg_preprocess_train, mri_preprocess_train)
-    preprocess_test = (eeg_preprocess_test, mri_preprocess_test)
-
-    if verbose:
-        print("eeg_preprocess_train:", eeg_preprocess_train)
-        print("\n" + "-" * 100 + "\n")
-
-        print("eeg_preprocess_test:", eeg_preprocess_test)
-        print("\n" + "-" * 100 + "\n")
-
-        print("mri_preprocess_train:", mri_preprocess_train)
-        print("\n" + "-" * 100 + "\n")
-
-        print("mri_preprocess_test:", mri_preprocess_test)
-        print("\n" + "-" * 100 + "\n")
-
-    return preprocess_train, preprocess_test
 
 
-def make_cauemm_dataloader(
+    return mri_preprocess_train, mri_preprocess_test
+
+
+def make_caumri_dataloader(
         config,
         train_dataset,
         val_dataset,
@@ -876,7 +578,7 @@ def build_emm_dataset_for_train(config, verbose=False):
     if "cwd" in config:
         dataset_path = os.path.join(config["cwd"], dataset_path)
 
-    config_dataset = load_cauemm_config(dataset_path)
+    config_dataset = load_caumri_config(dataset_path)
     config.update(**config_dataset)
 
     if "run_mode" not in config.keys():
@@ -885,9 +587,7 @@ def build_emm_dataset_for_train(config, verbose=False):
         print("\n" + "=" * 80 + "\n")
         config["run_mode"] = "train"
 
-    (eeg_transform, eeg_transform_multicrop, mri_transform) = compose_transforms(config, verbose=verbose)
-    config["eeg_transform"] = eeg_transform
-    config["eeg_transform_multicrop"] = eeg_transform_multicrop
+    mri_transform = compose_transforms(config, verbose=verbose)
     config["mri_transform"] = mri_transform
     load_event = config["load_event"] or config.get("reject_events", False)
 
@@ -896,12 +596,12 @@ def build_emm_dataset_for_train(config, verbose=False):
         train_dataset,
         val_dataset,
         test_dataset,
-    ) = load_cauemm_task_datasets(
+    ) = load_caumri_task_datasets(
         dataset_path=dataset_path,
         task=config["task"],
         load_event=load_event,
         eeg_file_format=config["eeg_file_format"],
-        transform=(eeg_transform,mri_transform),
+        transform=mri_transform,
         verbose=verbose,
     )
     config.update(**config_task)
@@ -909,13 +609,13 @@ def build_emm_dataset_for_train(config, verbose=False):
     (
         _,
         multicrop_test_dataset,
-    ) = load_cauemm_task_split(
+    ) = load_caumri_task_split(
         dataset_path=dataset_path,
         task=config["task"],
         split="test",
         load_event=load_event,
         eeg_file_format=config["eeg_file_format"],
-        transform=(eeg_transform_multicrop, mri_transform),
+        transform=mri_transform,
         verbose=verbose,
     )
 
@@ -924,7 +624,7 @@ def build_emm_dataset_for_train(config, verbose=False):
         val_loader,
         test_loader,
         multicrop_test_loader,
-    ) = make_cauemm_dataloader(
+    ) = make_caumri_dataloader(
         config,
         train_dataset,
         val_dataset,

@@ -4,7 +4,7 @@ run_mode: test
 seed: 0
 
 # load Pretrained weight
-load_pretrained: 7fk3uzv6
+load_pretrained: Exp/8douuh7e
 # iterations: ???  # automatically decided during runtime
 
 # regularization
@@ -14,7 +14,7 @@ mixup: 0.0
 
 # log
 num_history: 500
-save_model: true
+save_model: false
 
 # wandb
 use_wandb: false

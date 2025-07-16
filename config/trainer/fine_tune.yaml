@@ -1,6 +1,6 @@
 run_mode: train
-#load_pretrained: True
-load_pretrained: False
+load_pretrained: True
+#load_pretrained: False
 
 # reproducibility
 seed: 1234

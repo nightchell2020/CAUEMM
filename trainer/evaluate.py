@@ -265,9 +265,9 @@ def check_accuracy_extended(model, loader, preprocess, config, repeat=1, dummy=1
 
     # Added 250715
     preds = torch.tensor(preds)
-    Precision = sklearn.metrics.precision_score(target, pred, average='marco')
-    Recall = sklearn.metrics.recall_score(target, pred, average='macro')
-    F1 = sklearn.metrics.f1_score(target, pred, average='macro')
+    Precision = sklearn.metrics.precision_score(target, preds, average='macro')
+    Recall = sklearn.metrics.recall_score(target, preds, average='macro')
+    F1 = sklearn.metrics.f1_score(target, preds, average='macro')
     # AUROC = sklearn.metrics.roc_auc_score(target_prob, pred_prob, average='macro', multi_class='ovr')
     # AUPRC = sklearn.metrics.average_precision_score(target_prob, pred_prob, average='macro')
 
