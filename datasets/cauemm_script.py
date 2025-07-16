@@ -938,7 +938,7 @@ def build_emm_dataset_for_train(config, verbose=False):
     ) = compose_preprocess(config, train_loader, verbose=verbose)
     config["preprocess_train"] = preprocess_train
     config["preprocess_test"] = preprocess_test
-    # config["in_channels"] = preprocess_train(next(iter(train_loader)))["signal"].shape[1]
+    config["in_channels"] = preprocess_train[0](next(iter(train_loader)))["signal"].shape[1]
     config["out_dims"] = len(config["class_label_to_name"])
 
     return (

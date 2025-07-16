@@ -28,8 +28,8 @@ num_history: 500
 save_model: true
 
 # wandb
-use_wandb: true
-#use_wandb: false
+#use_wandb: true
+use_wandb: false
 draw_result: true
 watch_model: false
 

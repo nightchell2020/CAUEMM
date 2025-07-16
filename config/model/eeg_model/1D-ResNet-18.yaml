@@ -7,4 +7,3 @@ model: 1D-ResNet-18
 conv_layers: [2, 2, 2, 2]
 block: basic
 load_pretrained: CEEDNet/1D-ResNet-18
-in_channels: 20
