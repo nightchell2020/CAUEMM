@@ -1,10 +1,12 @@
 defaults:
 #  - data: cauemm-abnormal
   - data: cauemm-dementia
+
 #  - trainer: base_test
 #  - trainer: tiny-train
 #  - trainer: base_train
   - trainer: fine_tune
+
   - model: multi-modal
   - _self_
 

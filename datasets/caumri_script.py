@@ -10,7 +10,7 @@ from torchvision import transforms
 
 from .caumri_dataset import CauMriDataset
 from .pipeline import EegAddGaussianNoiseAge, MriSpatialPad, MriResize, MriNormalize, MriToTensor, MriToDevice, \
-    emm_collate_fn, MriCenterCrop, MriDropInvalidRange
+    mri_collate_fn, MriCenterCrop, MriDropInvalidRange
 
 
 
@@ -200,7 +200,6 @@ def load_caumri_task_split(
         task: str,
         split: str,
         load_event: bool = True,
-        eeg_file_format: str = "memmap",
         transform=None,
         verbose=False,
 ):
@@ -521,7 +520,7 @@ def make_caumri_dataloader(
             drop_last=True,
             num_workers=num_workers,
             pin_memory=pin_memory,
-            collate_fn=emm_collate_fn,
+            collate_fn=mri_collate_fn,
         )
     else:
         train_loader = DataLoader(
@@ -532,7 +531,7 @@ def make_caumri_dataloader(
             drop_last=False,
             num_workers=num_workers,
             pin_memory=pin_memory,
-            collate_fn=emm_collate_fn,
+            collate_fn=mri_collate_fn,
         )
 
     val_loader = DataLoader(
@@ -543,7 +542,7 @@ def make_caumri_dataloader(
         drop_last=False,
         num_workers=num_workers,
         pin_memory=pin_memory,
-        collate_fn=emm_collate_fn,
+        collate_fn=mri_collate_fn,
     )
 
     test_loader = DataLoader(
@@ -553,7 +552,7 @@ def make_caumri_dataloader(
         drop_last=False,
         num_workers=num_workers,
         pin_memory=pin_memory,
-        collate_fn=emm_collate_fn,
+        collate_fn=mri_collate_fn,
     )
 
     multicrop_test_loader = DataLoader(
@@ -563,7 +562,7 @@ def make_caumri_dataloader(
         drop_last=False,
         num_workers=num_workers,
         pin_memory=pin_memory,
-        collate_fn=emm_collate_fn,
+        collate_fn=mri_collate_fn,
     )
 
     return (
@@ -573,7 +572,7 @@ def make_caumri_dataloader(
         multicrop_test_loader,
     )
 
-def build_emm_dataset_for_train(config, verbose=False):
+def build_mri_dataset_for_train(config, verbose=False):
     dataset_path = config["dataset_path"]
     if "cwd" in config:
         dataset_path = os.path.join(config["cwd"], dataset_path)
@@ -600,7 +599,6 @@ def build_emm_dataset_for_train(config, verbose=False):
         dataset_path=dataset_path,
         task=config["task"],
         load_event=load_event,
-        eeg_file_format=config["eeg_file_format"],
         transform=mri_transform,
         verbose=verbose,
     )
@@ -614,7 +612,6 @@ def build_emm_dataset_for_train(config, verbose=False):
         task=config["task"],
         split="test",
         load_event=load_event,
-        eeg_file_format=config["eeg_file_format"],
         transform=mri_transform,
         verbose=verbose,
     )

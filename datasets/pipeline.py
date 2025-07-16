@@ -1190,3 +1190,20 @@ def emm_collate_fn(batch):
         batched_sample["class_label"] = torch.stack(batched_sample["class_label"])
 
     return batched_sample
+
+def mri_collate_fn(batch):
+    batched_sample = {k: [] for k in batch[0].keys()}
+
+    for sample in batch:
+        for k in sample.keys():
+            batched_sample[k] += [sample[k]]
+
+
+    batched_sample["volume"] = torch.stack(batched_sample["volume"])
+    batched_sample["volume"] = batched_sample["volume"].unsqueeze(dim=1)
+    # batched_sample["age"] = torch.stack(batched_sample["age"])
+    batched_sample["age"] = torch.tensor(batched_sample["age"])
+    if "class_label" in batched_sample.keys():
+        batched_sample["class_label"] = torch.tensor(batched_sample["class_label"])
+
+    return batched_sample

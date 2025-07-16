@@ -224,6 +224,7 @@ class ResNet3D(nn.Module):
             block = BottleneckBlock3D
 
         self.sequence_length = seq_size
+        self.output_length = out_dims
 
         input_stage = []
         input_stage.append(

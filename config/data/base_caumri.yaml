@@ -1,0 +1,19 @@
+# base configuration of CAUMRI-dataset
+
+
+dataset_name: caumri-dataset
+dataset_path: /media/night/dawn/brain/CAUEMM/
+task: dementia # abnormal
+mri_file_format: nii
+
+# preprocessing configuration
+load_event: false
+input_norm: datapoint # dataset
+
+# preprocessing mri_configuration
+mri_resize: 64 # 128
+
+# augmentation configuration
+awgn: 0.1
+awgn_age: 0.1
+mgn: 0.001

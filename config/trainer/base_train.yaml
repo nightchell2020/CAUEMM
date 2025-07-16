@@ -29,5 +29,3 @@ watch_model: false
 
 # GPU
 ddp: true
-# device: ???  automatically decided during runtime
-# ddp_size: ???  automatically decided during runtime

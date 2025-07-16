@@ -2,3 +2,4 @@ _target_: ???
 model: ???
 in_channels: 1
 out_dims: ${concat_dim}
+mri_norm_type: ??? # z_score or min_max

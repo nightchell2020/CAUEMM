@@ -4,7 +4,7 @@ import torch
 import wandb
 import pprint
 
-from .train_core import train_multistep, ssl_train_multistep
+from .train_core import train_multistep, unimodal_train_multistep
 from .utils import wandb_config_update
 from datetime import datetime
 from optim import get_optimizer
@@ -111,6 +111,7 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
 
         # train during 'history_interval' steps
         loss, train_acc = train_multistep(
+        # loss, train_acc = unimodal_train_multistep(
             model=model,
             loader=train_loader,
             preprocess=preprocess_train,

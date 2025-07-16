@@ -1,0 +1,11 @@
+defaults:
+  - data: base_caumri
+  - trainer: fine_tune
+  - model: 3D-ResNet-18
+  - _self_
+
+hydra:
+  run:
+    dir: local/hydra/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+unimodal: true

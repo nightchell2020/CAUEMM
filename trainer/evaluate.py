@@ -99,10 +99,31 @@ def compute_feature_embedding(model, sample_batched, preprocess, config, target_
 
     return output
 
+@torch.no_grad()
+def unimodal_compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=1):
+    # evaluation mode
+    model.eval()
+
+    # preprocessing (this includes to-device operation)
+    preprocess(sample_batched)
+
+    # apply model on whole batch directly on device
+    volume = sample_batched["volume"]
+    age = sample_batched["age"]
+
+    module = model.module if config.get("ddp", False) else model
+    output = module.compute_feature_embedding(volume, target_from_last=target_from_last)
+
+    # DeiT model
+    if isinstance(output, tuple):
+        output = (output[0] + output[1]) / 2.0
+
+    return output
+
 
 @torch.no_grad()
 def estimate_logit(model, sample_batched, preprocess, config):
-    output = compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0)
+    output = compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0)      ##
     return output
 
 
@@ -126,7 +147,7 @@ def logit_to_prob(logit, config):
 
 @torch.no_grad()
 def estimate_class_score(model, sample_batched, preprocess, config):
-    output = compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0)
+    output = compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0) ###
     output = logit_to_prob(output, config)
     return output
 
