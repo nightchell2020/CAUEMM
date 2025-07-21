@@ -49,23 +49,23 @@ def inference_script(
 
 
     model.eval()
-    for sample_batched in test_loader:
-        # preprocessing (this includes to-device operation)
-        preprocess[0](sample_batched)
-        preprocess[1](sample_batched)
+    # for sample_batched in test_loader:
+    #     # preprocessing (this includes to-device operation)
+    #     preprocess[0](sample_batched)
+    #     preprocess[1](sample_batched)
+    #
+    #     # pull the data
+    #     signal = sample_batched["signal"]
+    #     volume = sample_batched["volume"]
+    #     age = sample_batched["age"]
+    #     y = sample_batched["class_label"]
+    #     signal, age, y1, y2, lam, mixup_index = mixup_data(signal, age, y, config["mixup"], config["device"])
+    #
+    #
+    #     with autocast('cuda', enabled=config.get("mixed_precision", False)):
+    #         # forward pass
+    #         output = model([signal, volume, age])
 
-        # pull the data
-        # signal = sample_batched["signal"]
-        volume = sample_batched["volume"]
-        age = sample_batched["age"]
-        y = sample_batched["class_label"]
-        # signal, age, y1, y2, lam, mixup_index = mixup_data(signal, age, y, config["mixup"], config["device"])
-        volume, age, y1, y2, lam, mixup_index = mixup_data(volume, age, y, config["mixup"], config["device"])
-
-        with autocast('cuda', enabled=config.get("mixed_precision", False)):
-            # forward pass
-            # output = model([signal, volume, age])
-            output = model(volume)
 
 
     test_result = check_accuracy_extended(

@@ -21,7 +21,10 @@ class EMMNet(nn.Module):
         super().__init__()
         self.mri_model = mri_model
         self.eeg_model = eeg_model
-        self.concat_dim = concat_dim
+        if fusion == 'attention':
+            self.concat_dim = concat_dim / 2
+        else :
+            self.concat_dim = concat_dim
         self.output_length = output_length
         self.fc_stages = fc_stages
         self.fusion = fusion
@@ -59,6 +62,9 @@ class EMMNet(nn.Module):
             fused = torch.cat([feat3d, feat1d], dim=1)
         elif self.fusion == "add":
             fused = feat3d + feat1d
+        elif self.fusion == "attention":
+            attn = nn.MultiheadAttention(embed_dim=256,num_heads=8)
+            fused = attn(query=feat3d, key=feat1d, value=feat1d)
         else:
             raise ValueError("Invalid fusion method")
 

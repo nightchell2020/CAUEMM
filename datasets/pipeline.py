@@ -945,7 +945,7 @@ class MriSpatialPad(nn.Module):
 
     def __init__(self, spatial_size=None, mode='constant', method='symmetric', value=0):
         super().__init__()
-        self.spatial_size = spatial_size    # e.g., [128, 128, 128]
+        self.spatial_size = spatial_size    # e.g., 256
         self.mode = mode                    # 'constant', 'reflect', etc. (from torch.nn.functional.pad)
         self.method = method                # 'symmetric' or 'end'
         self.value = value                  # padding value for 'constant' mode

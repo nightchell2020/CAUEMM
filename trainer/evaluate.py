@@ -249,7 +249,8 @@ def check_accuracy_extended(model, loader, preprocess, config, repeat=1, dummy=1
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
     preds = []
-
+    serials = []
+    error_records = []
     # warm-up using dummy round
     for k in range(dummy):
         for sample_batched in loader:
@@ -265,7 +266,8 @@ def check_accuracy_extended(model, loader, preprocess, config, repeat=1, dummy=1
             total_time += start_event.elapsed_time(end_event) / 1000
 
             y = sample_batched["class_label"]
-
+            serial = sample_batched["serial"]
+            serials += serial
             # classification score for drawing ROC curve
             if score is None:
                 score = s.detach().cpu().numpy()
@@ -277,6 +279,13 @@ def check_accuracy_extended(model, loader, preprocess, config, repeat=1, dummy=1
             # confusion matrix
             pred = s.argmax(dim=-1)
             confusion_matrix += calculate_confusion_matrix(pred, y, num_classes=config["out_dims"])
+
+            # Check out which data is failed
+            wrong_mask = (pred != y)
+            if torch.any(wrong_mask):
+                wrong_indices = torch.nonzero(wrong_mask).squeeze(dim=1)
+                for i in wrong_indices:
+                    error_records.append(f"{serial[i]} | GT: {y[i].item()} | Pred: {pred[i].item()}")
 
             # for other metrics
             preds += pred
@@ -295,7 +304,10 @@ def check_accuracy_extended(model, loader, preprocess, config, repeat=1, dummy=1
     # AUROC = sklearn.metrics.roc_auc_score(target_prob, pred_prob, average='macro', multi_class='ovr')
     # AUPRC = sklearn.metrics.average_precision_score(target_prob, pred_prob, average='macro')
 
-    # return accuracy, score, target, confusion_matrix, throughput
+    with open(os.path.join(config["cwd"],'error_records.txt'), "w") as f:
+        for record in error_records:
+            f.write(record + "\n")
+
     return accuracy, score, target, confusion_matrix, throughput, Precision, Recall, F1
 
 

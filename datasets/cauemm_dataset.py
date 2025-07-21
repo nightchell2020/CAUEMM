@@ -61,7 +61,6 @@ class CauEegMriMultiModalDataset(Dataset):
         if self.load_event:
             sample["event"] = self._read_event(sample)
 
-        # ToDo: How to separately process transform ?
         if self.eeg_transform:
             sample = self.eeg_transform(sample)
         if self.mri_transform:

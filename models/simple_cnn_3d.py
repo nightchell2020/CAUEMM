@@ -35,7 +35,6 @@ class Simple3DCNN(nn.Module):
         else:
             raise ValueError(f"{self.__class__.__name__}.__init__: Invalid base_pool '{base_pool}'")
 
-        # ToDo : consider kernel_size
         self.conv1 = nn.Conv3d(
             in_channels,
             base_channels,

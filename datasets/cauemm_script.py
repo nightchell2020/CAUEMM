@@ -506,7 +506,7 @@ def compose_transforms(config, verbose=False):
 
     # # Version 1.0 of MRI Transformation #
     resize_size = config.get('mri_resize', 128)
-    mri_transform += [MriSpatialPad()]
+    mri_transform += [MriSpatialPad(256)]
     mri_transform += [MriResize(resize_size)]
     mri_transform += [MriToTensor()]
     mri_transform = transforms.Compose(mri_transform)
@@ -777,7 +777,6 @@ def make_cauemm_dataloader(
         val_dataset,
         test_dataset,
         multicrop_test_dataset,
-        verbose=False
 ):
     if config["device"] == "cpu":
         num_workers = 0
@@ -929,7 +928,6 @@ def build_emm_dataset_for_train(config, verbose=False):
         val_dataset,
         test_dataset,
         multicrop_test_dataset,
-        verbose=False,
     )
     (
         preprocess_train,
