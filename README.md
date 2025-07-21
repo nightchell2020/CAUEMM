@@ -78,21 +78,21 @@ dataset
 Train our EMMNet model on the training set of *CAUEMM-Dementia* from scratch using the following command:
 
 ```bash
-  python train.py data=cauemm-dementia train=base_train model=multi-modal
+  python train.py data=cauemm-dementia trainer=base_train model=multi-modal
 ```
 
 Similarly, train our model on the training set of *CAUEMM-Abnormal* from scratch using:
 
 ```bash
-  python train.py data=cauemm-abnormal train=base_train model=multi-modal
+  python train.py data=cauemm-abnormal trainer=base_train model=multi-modal
 ```
 
 Or, you can check [this Jupyter notebook](notebook/06_Pretrain_Self_Supervision_MAE.ipynb).
 
-If you want to start with pretrained weights:
+If you want to start train with pretrained weights:
 
 ```bash
-  python train.py   data=cauemm-abnormal  train=fine_tune   model=multi-modal
+  python train.py   data=cauemm-dementia  trainer=fine_tune   model=multi-modal
 ```
 
 If you encounter a GPU memory allocation error or wish to adjust the balance between memory usage and training speed, you can specify the minibatch size by adding the `++model.minibatch=INTEGER_NUMBER` option to the command as shown below:
@@ -104,15 +104,20 @@ If you encounter a GPU memory allocation error or wish to adjust the balance bet
 Thanks to [Hydra](https://hydra.cc/) support, the model, hyperparameters, and other training details are easily tuned using or modifying config files.
 
 
-### Evaluation
+### Evaluation? Inference?
 
-Evaluation can be conducted using [this Jupyter notebook](notebook/03_Evaluate.ipynb) (or [another notebook](notebook/03_Evaluate_Test_Only.ipynb) for `caueeg-dataset-test-only` case)
+Evaluation can be conducted using the following command:
+```bash
+  python inference.py data=cauemm-dementia trainer=base_test model=multi-modal
+```
+
+[//]: # ([this Jupyter notebook]&#40;notebook/03_Evaluate.ipynb&#41; &#40;or [another notebook]&#40;notebook/03_Evaluate_Test_Only.ipynb&#41; for `caueeg-dataset-test-only` case&#41;)
 
 
 ---
 
 
-### *CAUEEG-Abnormal* dataset
+### *CAUEMM-Dementia* dataset
 
 |                   Model                   | #Params | Model size (MiB) | TTA | Throughput (EEG/s) | Test accuracy |                                             Link 1                                             |                Link 2                |
 |:-----------------------------------------:|:-------:|:----------------:|:---:|:------------------:|:-------------:|:----------------------------------------------------------------------------------------------:|:------------------------------------:|
@@ -130,7 +135,6 @@ Evaluation can be conducted using [this Jupyter notebook](notebook/03_Evaluate.i
 |          CEEDNet (2D-ResNet-50)           |  25.7M  |       98.5       |  ✔  |       187.30       |     74.96%    | [atbhqdgg](https://drive.google.com/file/d/1ZWnK04-o5V1eIDtlE_5Ct83oxaMfHkzX/view?usp=sharing) | [atbhqdgg](http://naver.me/5Lo4eJAa) |
 |          CEEDNet (2D-ResNeXt-50)          |  25.9M  |       99.1       |  ✔  |       201.01       |     75.85%    | [0svudowu](https://drive.google.com/file/d/1A8npNb_3ixmS6ui6yTonh95oQXwPjHWp/view?usp=sharing) | [0svudowu](http://naver.me/FEdfcVaz) |
 |            CEEDNet (ViT-B-16)             |  86.9M  |       331.6      |  ✔  |        63.99       |     72.70%    | [1cdws3t5](https://drive.google.com/file/d/1OT-xOTJ2kSqYWOG0KWQ6PeSPYWdX52Lo/view?usp=sharing) | [1cdws3t5](http://naver.me/xkqoPaor) |
-|            CEEDNet (Ensemble)             |  253.8M |       969.9      |  ✔  |        26.40       |     79.16%    |                                                                                                |                                      |
 
 
 

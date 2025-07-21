@@ -943,7 +943,7 @@ class MriSpatialPad(nn.Module):
     Supports 'symmetric' or 'end' padding mode.
     """
 
-    def __init__(self, spatial_size=256, mode='constant', method='symmetric', value=0):
+    def __init__(self, spatial_size=None, mode='constant', method='symmetric', value=0):
         super().__init__()
         self.spatial_size = spatial_size    # e.g., [128, 128, 128]
         self.mode = mode                    # 'constant', 'reflect', etc. (from torch.nn.functional.pad)
@@ -960,7 +960,10 @@ class MriSpatialPad(nn.Module):
 
         # Get original shape
         D, H, W = volume.shape
-        ideal_size = max(D, H, W)
+        if self.spatial_size is not None:
+            ideal_size = max(D,H,W,self.spatial_size)
+        else:
+            ideal_size = max(D, H, W)
         target_D, target_H, target_W = ideal_size, ideal_size, ideal_size
 
         pad_d = max(target_D - D, 0)
@@ -1045,11 +1048,11 @@ class MriCenterCrop(nn.Module):
             raise ValueError(f"Expected 3D volume, got shape {volume.shape}")
         [img_d, img_h, img_w] = volume.shape
 
-        Z_max = int(np.min([int((img_d - (img_d - self.crop_size)/2)), img_d]))      # 256 - (256-160) /2 = 208
+        Z_max = int(np.min([int((img_d - (img_d - self.crop_size)/2)), img_d]))
         Y_max = int(np.min([int((img_h - (img_h - self.crop_size)/2)), img_h]))
         X_max = int(np.min([int((img_w - (img_w - self.crop_size)/2)), img_w]))
 
-        Z_min = int(np.max([int(img_d - self.crop_size)/2, 0]))                     # (256-160)/2 = 48
+        Z_min = int(np.max([int(img_d - self.crop_size)/2, 0]))
         Y_min = int(np.max([int(img_h - self.crop_size)/2, 0]))
         X_min = int(np.max([int(img_w - self.crop_size)/2, 0]))
 
@@ -1201,7 +1204,6 @@ def mri_collate_fn(batch):
 
     batched_sample["volume"] = torch.stack(batched_sample["volume"])
     batched_sample["volume"] = batched_sample["volume"].unsqueeze(dim=1)
-    # batched_sample["age"] = torch.stack(batched_sample["age"])
     batched_sample["age"] = torch.tensor(batched_sample["age"])
     if "class_label" in batched_sample.keys():
         batched_sample["class_label"] = torch.tensor(batched_sample["class_label"])

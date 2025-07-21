@@ -78,6 +78,9 @@ def vis_signal(model, sample_batched, preprocess, config):
 
 @torch.no_grad()
 def compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=1):
+    # get Class Activation Map from MRI encoding layer
+    model = medcam.inject(model, output_dir="/home/night/Mycode/EMMnet/attention_maps/", layer=['mri_model.conv_stage1', 'mri_model.conv_stage2'], save_maps=True)
+
     # evaluation mode
     model.eval()
 
@@ -552,8 +555,4 @@ def check_accuracy_multicrop_extended(model, loader, preprocess, config, aggrega
     return accuracy, score, target, confusion_matrix, throughput
 
 
-def checkm3dcam(model, data_loader, output_dir="./cam"):
-    model = medcam.inject(model, output_dir=output_dir, save_maps=True)
-    model.eval()
-    for batch in data_loader:
-        output = model(batch)
+

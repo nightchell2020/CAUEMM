@@ -167,6 +167,11 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
                 best_val_acc = val_acc
                 best_model_state = deepcopy(model.state_dict())
 
+    '''
+    Test & Eval phase
+    '''
+    # Todo: 1.Visualize Attention Map of 3D MRI
+    #       2.Print serial number and eeg section of the falsely detected case
     # calculate the test accuracy for best and last models
     if main_process:
         last_model_state = deepcopy(model.state_dict())

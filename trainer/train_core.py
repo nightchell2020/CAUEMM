@@ -13,6 +13,10 @@ def train_multistep(model, loader, preprocess, optimizer, scheduler, amp_scaler,
     if config["eeg_freeze"]:
         for param in model.module.eeg_model.parameters():
             param.requires_grad = False
+    if config["mri_freeze"]:
+        for param in model.module.mri_model.parameters():
+            param.requires_grad = False
+
     # init
     i = 0
     cumu_loss = 0
@@ -33,7 +37,6 @@ def train_multistep(model, loader, preprocess, optimizer, scheduler, amp_scaler,
             y = sample_batched["class_label"]
 
             # mix_up the mini-batched data
-            # but we do not use mix-up aug b/c MRI data, so config['mixup'] set to be 0
             signal, age, y1, y2, lam, mixup_index = mixup_data(signal, age, y, config["mixup"], config["device"])
 
             # mixed precision training if needed
@@ -45,7 +48,7 @@ def train_multistep(model, loader, preprocess, optimizer, scheduler, amp_scaler,
                 else:
                     output_kd = output
 
-                if config["use_age"] == "estimate":
+                if config['eeg_model']["use_age"] == "estimate":
                     output_age = output[:, -1]
                     output = output[:, :-1]
 
@@ -141,7 +144,7 @@ def unimodal_train_multistep(model, loader, preprocess, optimizer, scheduler, am
                 else:
                     output_kd = output
 
-                if config["use_age"] == "estimate":
+                if config['eeg_model']["use_age"] == "estimate":
                     output_age = output[:, -1]
                     output = output[:, :-1]
 

@@ -55,16 +55,18 @@ def inference_script(
         preprocess[1](sample_batched)
 
         # pull the data
-        signal = sample_batched["signal"]
+        # signal = sample_batched["signal"]
         volume = sample_batched["volume"]
         age = sample_batched["age"]
         y = sample_batched["class_label"]
-        signal, age, y1, y2, lam, mixup_index = mixup_data(signal, age, y, config["mixup"], config["device"])
+        # signal, age, y1, y2, lam, mixup_index = mixup_data(signal, age, y, config["mixup"], config["device"])
+        volume, age, y1, y2, lam, mixup_index = mixup_data(volume, age, y, config["mixup"], config["device"])
 
         with autocast('cuda', enabled=config.get("mixed_precision", False)):
             # forward pass
-            output = model([signal, volume, age])
-        print("## I am Here ! ##")
+            # output = model([signal, volume, age])
+            output = model(volume)
+
 
     test_result = check_accuracy_extended(
         model=model,
@@ -74,19 +76,19 @@ def inference_script(
         repeat=config.get("test_accuracy_repeat", 30),
     )
     test_acc, score, target, test_confusion, throughput, precision, recall, f1_score = test_result
-    multicrop_test_acc = check_accuracy_multicrop(
-        model=model,
-        loader=multicrop_test_loader,
-        preprocess=preprocess,
-        config=config,
-        repeat=config.get("test_accuracy_repeat", 30),
-    )
+    # multicrop_test_acc = check_accuracy_multicrop(
+    #     model=model,
+    #     loader=multicrop_test_loader,
+    #     preprocess=preprocess,
+    #     config=config,
+    #     repeat=config.get("test_accuracy_repeat", 30),
+    # )
 
     pprint.pprint(
         {
             f"Test Accuracy": test_acc,
             "Confusion Matrix (Array)": test_confusion,
-            "Multi-Crop Test Accuracy": multicrop_test_acc,
+            # "Multi-Crop Test Accuracy": multicrop_test_acc,
             "Precision": precision,
             "Recall": recall,
             "f1 score": f1_score,
@@ -119,7 +121,7 @@ def run_inference(config):
     inference_script(config, model, test_loader, multicrop_test_loader, config["preprocess_test"])
 
 
-@hydra.main(config_path="config", config_name="infer_config")
+@hydra.main(config_path="config", config_name="test")
 def my_app(cfg: DictConfig) -> None:
     config = {
         **OmegaConf.to_container(cfg.data),

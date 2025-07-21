@@ -506,8 +506,7 @@ def compose_transforms(config, verbose=False):
 
     # # Version 1.0 of MRI Transformation #
     resize_size = config.get('mri_resize', 128)
-    mri_transform += [MriSpatialPad(spatial_size=(256,256,256))]
-    # mri_transform += [MriCenterCrop(160)]
+    mri_transform += [MriSpatialPad()]
     mri_transform += [MriResize(resize_size)]
     mri_transform += [MriToTensor()]
     mri_transform = transforms.Compose(mri_transform)
@@ -938,7 +937,7 @@ def build_emm_dataset_for_train(config, verbose=False):
     ) = compose_preprocess(config, train_loader, verbose=verbose)
     config["preprocess_train"] = preprocess_train
     config["preprocess_test"] = preprocess_test
-    config["in_channels"] = preprocess_train[0](next(iter(train_loader)))["signal"].shape[1]
+    config["eeg_model"]["in_channels"] = preprocess_train[0](next(iter(train_loader)))["signal"].shape[1]
     config["out_dims"] = len(config["class_label_to_name"])
 
     return (

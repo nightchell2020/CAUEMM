@@ -165,9 +165,10 @@ def prepare_and_run_train(rank, world_size, config):
     # generate the model and update some configurations
     model = generate_model(config)
     print_gpu_utilization()
+
     # load pretrained model if needed
-    #if "load_pretrained" in config.keys():
-     #   load_pretrained_params(model, config)
+    if "load_pretrained" in config.keys():
+        load_pretrained_params(model, config)
 
     # train
     train_script(
