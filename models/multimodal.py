@@ -22,7 +22,7 @@ class EMMNet(nn.Module):
         self.mri_model = mri_model
         self.eeg_model = eeg_model
         if fusion == 'attention':
-            self.concat_dim = concat_dim / 2
+            self.concat_dim = int(concat_dim / 2)
         else :
             self.concat_dim = concat_dim
         self.output_length = output_length
@@ -63,13 +63,18 @@ class EMMNet(nn.Module):
         elif self.fusion == "add":
             fused = feat3d + feat1d
         elif self.fusion == "attention":
-            attn = nn.MultiheadAttention(embed_dim=256,num_heads=8)
-            fused = attn(query=feat3d, key=feat1d, value=feat1d)
+            attn = nn.MultiheadAttention(embed_dim=16,num_heads=8, batch_first=True).to("cuda")
+            feat1d_patch = feat1d.reshape(-1,8,16)
+            feat3d_patch = feat3d.reshape(-1,8,16)
+            fused = attn(query=feat3d_patch, key=feat1d_patch, value=feat1d_patch)
         else:
             raise ValueError("Invalid fusion method")
 
         if target_from_last == 0:
-            x = self.fc_stage(fused)
+            if self.fusion == "attention":
+                x = self.fc_stage(fused.reshape(-1,128))
+            else:
+                x = self.fc_stage(fused)
         else:
             if target_from_last > self.fc_stages:
                 raise ValueError(
