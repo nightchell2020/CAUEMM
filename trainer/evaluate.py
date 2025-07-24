@@ -77,12 +77,14 @@ def vis_signal(model, sample_batched, preprocess, config):
 """"""""""""""
 
 @torch.no_grad()
-def compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=1):
+def compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=1, cam=True):
     # get Class Activation Map from MRI encoding layer
-    model = medcam.inject(model, output_dir="/home/night/Mycode/EMMnet/attention_maps/", layer=['mri_model.conv_stage1', 'mri_model.conv_stage2'], save_maps=True)
 
     # evaluation mode
     model.eval()
+    if cam :
+        model.mri_model = medcam.inject(model.mri_model, output_dir="/home/night/Mycode/EMMnet/attn_maps/",label=1,
+                              layer=['input_stage','conv_stage1', 'conv_stage2'], save_maps=True)
 
     # preprocessing (this includes to-device operation)
     preprocess[0](sample_batched)
@@ -150,7 +152,7 @@ def logit_to_prob(logit, config):
 
 @torch.no_grad()
 def estimate_class_score(model, sample_batched, preprocess, config):
-    output = compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0) ###
+    output = compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0, cam=config.get('Medcam', False)) ###
     output = logit_to_prob(output, config)
     return output
 

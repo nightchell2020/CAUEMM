@@ -13,7 +13,8 @@ from datasets.cauemm_script import build_emm_dataset_for_train
 from train import generate_model, check_device_env
 from copy import deepcopy
 from trainer.evaluate import check_accuracy_extended, check_accuracy_multicrop
-from trainer.visualize import draw_roc_curve, draw_confusion
+from trainer.visualize import draw_roc_curve, draw_confusion, draw_class_wise_metrics
+from models.utils import count_parameters
 
 
 def compose_dataset(config):
@@ -46,26 +47,9 @@ def inference_script(
     ):
     model_state = deepcopy(model.state_dict())
     model.load_state_dict(model_state)
-
+    print("Num_params :", count_parameters(model))
 
     model.eval()
-    # for sample_batched in test_loader:
-    #     # preprocessing (this includes to-device operation)
-    #     preprocess[0](sample_batched)
-    #     preprocess[1](sample_batched)
-    #
-    #     # pull the data
-    #     signal = sample_batched["signal"]
-    #     volume = sample_batched["volume"]
-    #     age = sample_batched["age"]
-    #     y = sample_batched["class_label"]
-    #     signal, age, y1, y2, lam, mixup_index = mixup_data(signal, age, y, config["mixup"], config["device"])
-    #
-    #
-    #     with autocast('cuda', enabled=config.get("mixed_precision", False)):
-    #         # forward pass
-    #         output = model([signal, volume, age])
-
 
 
     test_result = check_accuracy_extended(
@@ -105,9 +89,14 @@ def inference_script(
     draw_confusion(
         test_confusion,
         config["class_label_to_name"],
+        normalize=True,
         use_wandb=config["use_wandb"],
     )
-
+    draw_class_wise_metrics(
+        test_confusion,
+        config['class_label_to_name'],
+        use_wandb=config["use_wandb"]
+    )
 
 def run_inference(config):
     gc.collect()
