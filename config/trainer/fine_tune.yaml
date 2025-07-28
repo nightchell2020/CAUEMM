@@ -1,27 +1,25 @@
 run_mode: train
-load_pretrained: True
-#load_pretrained: False
 
 # reproducibility
-seed: 1234
+seed: 0
 
 # Training iteration
 base_lr: 1.90e-03
 search_lr: false
 search_multiplier: 1.0
-lr_scheduler_type: constant_with_decay # cosine_annealing_with_warmup
+lr_scheduler_type: cosine_decay_with_warmup_half
 # ['constant_with_decay', 'constant_with_twice_decay', 'transformer_style',
 # 'cosine_decay_with_warmup_half', 'cosine_decay_with_warmup_one_and_half',
 # 'cosine_decay_with_warmup_two_and_half', 'linear_decay_with_warmup', 'cosine_annealing_with_warmup']
 warmup_ratio: 0.05
 warmup_min: 30
-total_samples: 2000
-# iterations: ???  # automatically decided during runtime
+total_samples: 4000
+load_pretrained: true
 
 # regularization
-criterion: cross-entropy # focal, cross-entropy, svm, multi-bce
+criterion: focal # focal, cross-entropy, svm, multi-bce
 weight_decay: 4.71e-02
-mixup: 0.1  # must set to be 0
+mixup: 0.1
 
 # log
 num_history: 500

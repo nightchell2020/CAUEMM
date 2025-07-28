@@ -260,7 +260,6 @@ class Timesnet(nn.Module):
     def __init__(
         self,
         block: str,
-        conv_layers: List[int],
         in_channels: int,
         out_dims: int,
         seq_length: int,
@@ -301,7 +300,7 @@ class Timesnet(nn.Module):
         if self.use_age == "conv":
             in_channels += 1
         self.fc_stages = fc_stages
-
+        self.sequence_length = seq_length
         self.nn_act = get_activation_class(activation, class_name=self.__class__.__name__)
 
         if norm_layer is None:
@@ -321,6 +320,30 @@ class Timesnet(nn.Module):
 
         self.enc_embedding = DataEmbedding(c_in=7, d_model=32, embed_type='timeF', freq='h', dropout=dropout)
         self.model = nn.ModuleList([TimesBlock() for _ in range(e_layer)])
+
+        if final_pool == "average":
+            self.final_pool = nn.AdaptiveAvgPool1d(1)
+        elif final_pool == "max":
+            self.final_pool = nn.AdaptiveMaxPool1d(1)
+
+        fc_stage = []
+        if self.use_age == "fc":
+            self.current_channels = self.current_channels + 1
+
+        for i in range(fc_stages - 1):
+            layer = nn.Sequential(
+                nn.Linear(self.current_channels, self.current_channels // 2, bias=False),
+                nn.Dropout(p=dropout),
+                norm_layer(self.current_channels // 2),
+                self.nn_act(),
+            )
+            self.current_channels = self.current_channels // 2
+            fc_stage.append(layer)
+        fc_stage.append(nn.Linear(self.current_channels, out_dims))
+        self.fc_stage = nn.Sequential(*fc_stage)
+
+        self.reset_weights()
+
     def reset_weights(self):
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Conv2d)):
@@ -377,7 +400,7 @@ class Timesnet(nn.Module):
             enc_out = self.model[i](enc_out)
             enc_out = self.layer_norm(enc_out)      # [Batch,
         output = self.nn_act(enc_out)
-        output = self.dropout(output)
+        x = self.dropout(output)
 
         # output = output * x_mark_enc.unsqueeze(-1)  # (3, 4, 32)
         # _, output_shape_seq_length, output_shape_d_model = output.shape  # (3, 46080, 32)  46080 = 180s * 256Hz # IL : 10000 = 50s * 200HZ
@@ -385,6 +408,22 @@ class Timesnet(nn.Module):
         # new_output = output.transpose(2, 1)         # (3, 32, 46080)
         # new_output = self.eeg_model(new_output)     # (3, 32, 512)
         # new_output = new_output.view(-1, 32, 32, 4, 4)
+
+        if self.use_age == "fc":
+            x = torch.cat((x, age.reshape(-1, 1)), dim=1)
+
+        if target_from_last == 0:
+            x = self.fc_stage(x)
+        else:
+            if target_from_last > self.fc_stages:
+                raise ValueError(
+                    f"{self.__class__.__name__}.compute_feature_embedding(target_from_last) receives "
+                    f"an integer equal to or smaller than fc_stages={self.fc_stages}."
+                )
+
+            for l in range(self.fc_stages - target_from_last):
+                x = self.fc_stage[l](x)
+
         return x
 
 

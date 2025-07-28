@@ -2,16 +2,22 @@ defaults:
   - eeg_model: 1D-ResNet-18
   - mri_model: 3D-ResNet-18
   - _self_
+#defaults:
+#  - eeg_model: MST-eeg
+#  - mri_model: MST-mri
+#  - _self_
 
 _target_: models.multimodal.EMMNet
 
 ############### MODEL ARCHITECTURE
-use_age: true
+
 concat_dim: 128
-output_length: 3
+output_length: 2
 fc_stages: 1
 activation: gelu #mish, gelu, relu
 mri_norm_type: 'min_max' # z_score or min_max
-eeg_freeze: false
+fusion: 'concat'  # 'attention'
+mri_freeze: false
+eeg_freeze: true
 
 minibatch_4090: 16

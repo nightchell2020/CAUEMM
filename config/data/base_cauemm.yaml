@@ -16,7 +16,7 @@ seq_length: 2000 # 20000  # 200Hz * 10s = 2000 for base
 latency: 2000
 signal_length_limit: 10000000  # A sufficiently large number for no effect
 EKG: O
-photic: X
+photic: O
 input_norm: datapoint # dataset
 
 # preprocessing mri_configuration

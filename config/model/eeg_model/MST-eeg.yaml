@@ -2,9 +2,12 @@ defaults:
   - base_model
   - _self_
 
-_target_: models.mstnet.EEGEncoder
-model: EEGEncoder
+_target_: models.mst_timesnet.Timesnet
+model: Timesnet
+block: timesblock
 seq_length: ${seq_length}
 base_channels: 32
+e_layer: 2
+fc_stages: 1
 use_age: no
 activation: relu

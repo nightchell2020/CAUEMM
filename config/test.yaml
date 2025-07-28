@@ -1,5 +1,5 @@
 defaults:
-  - data: cauemm-dementia
+  - data: cauemm-abnormal
   - trainer: base_test
   - model: multi-modal
   - _self_

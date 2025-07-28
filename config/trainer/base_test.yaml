@@ -4,8 +4,12 @@ run_mode: test
 seed: 0
 
 # load Pretrained weight
-load_pretrained: Exp/8douuh7e
-# iterations: ???  # automatically decided during runtime
+load_pretrained: Exp/mvv6l6bg
+
+
+# test option
+test_accuracy_repeat: 100
+Medcam: false
 
 # regularization
 criterion: cross-entropy

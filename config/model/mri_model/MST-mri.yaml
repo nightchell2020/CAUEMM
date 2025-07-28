@@ -7,6 +7,7 @@ model: ImageEncoder
 
 in_channels: 1
 out_dims: ${concat_dim}
+base_channels: 64
 image_size: 128
 activation: relu
 minibatch_4090: 32

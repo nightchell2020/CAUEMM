@@ -29,17 +29,18 @@ class EMMNet(nn.Module):
         self.fc_stages = fc_stages
         self.fusion = fusion
         self.nn_act = get_activation_class(activation, class_name=self.__class__.__name__)
-
+        self.current_channel = concat_dim*2
         fc_stage = []
         for i in range(fc_stages):
             layer = nn.Sequential(
-                nn.Linear(self.concat_dim*2, self.output_length, bias=False),
+                nn.Linear(self.current_channel, self.current_channel // 2, bias=False),
                 nn.Dropout(),
-                nn.BatchNorm1d(self.output_length),
+                nn.BatchNorm1d(self.current_channel//2),
                 self.nn_act()
             )
+            self.current_channel = self.current_channel // 2
             fc_stage.append(layer)
-
+        fc_stage.append(nn.Linear(self.current_channel, output_length))
         self.fc_stage = nn.Sequential(*fc_stage)
 
 
