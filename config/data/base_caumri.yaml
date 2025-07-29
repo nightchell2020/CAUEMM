@@ -3,7 +3,7 @@
 
 dataset_name: caumri-dataset
 dataset_path: /media/night/dawn/brain/CAUEMM/
-task: dementia # abnormal
+task: abnormal # abnormal
 mri_file_format: nii
 
 # preprocessing configuration
