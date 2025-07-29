@@ -12,7 +12,7 @@ from optim import get_lr_scheduler
 from .evaluate import check_accuracy
 from .evaluate import check_accuracy_extended
 from .evaluate import check_accuracy_multicrop
-from .visualize import draw_roc_curve, draw_confusion
+from .visualize import draw_roc_curve, draw_confusion, draw_class_wise_metrics
 
 
 def train_script(config, model, train_loader, val_loader, test_loader, multicrop_test_loader, preprocess_train, preprocess_test):
@@ -238,7 +238,7 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
                         round(last_test_acc, 2),
                     ),
                     "Confusion Matrix (Array)": test_confusion,
-                    "Multi-Crop Test Accuracy": multicrop_test_acc,
+                    # "Multi-Crop Test Accuracy": multicrop_test_acc,
                     "Precision": precision,
                     "Recall": recall,
                     "f1 score": f1_score
@@ -255,7 +255,7 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
                         round(last_test_acc, 2),
                     ),
                     "Confusion Matrix (Array)": test_confusion,
-                    "Multi-Crop Test Accuracy": multicrop_test_acc,
+                    # "Multi-Crop Test Accuracy": multicrop_test_acc,
                     "Precision": precision,
                     "Recall": recall,
                     "f1 score": f1_score
@@ -274,6 +274,11 @@ def train_script(config, model, train_loader, val_loader, test_loader, multicrop
                 test_confusion,
                 config["class_label_to_name"],
                 use_wandb=config["use_wandb"],
+            )
+            draw_class_wise_metrics(
+                test_confusion,
+                config['class_label_to_name'],
+                use_wandb=config["use_wandb"]
             )
 
         if config["use_wandb"]:

@@ -10,6 +10,7 @@ from collections import OrderedDict
 from trainer.mixup_util import mixup_data, mixup_criterion
 from omegaconf import DictConfig, OmegaConf
 from datasets.cauemm_script import build_emm_dataset_for_train
+from datasets.caumri_script import build_mri_dataset_for_train
 from train import generate_model, check_device_env
 from copy import deepcopy
 from trainer.evaluate import check_accuracy_extended, check_accuracy_multicrop
@@ -19,10 +20,11 @@ from models.utils import count_parameters
 
 def compose_dataset(config):
     return build_emm_dataset_for_train(config)
+    # return build_mri_dataset_for_train(config)
 
 def load_pretrained_params(model, config):
     save_path = os.path.join(config.get("cwd", ""), f'local/checkpoint/{config["load_pretrained"]}/')
-    ckpt = torch.load(os.path.join(save_path, "checkpoint.pt"), map_location=config["device"])
+    ckpt = torch.load(os.path.join(save_path, "checkpoint.pt"), map_location=config["device"]) ###########
 
     if ckpt["config"]["ddp"] == config["ddp"]:
         model.load_state_dict(ckpt["model_state"])
@@ -35,7 +37,6 @@ def load_pretrained_params(model, config):
         model.load_state_dict(model_state)
     else:
         model.module.load_state_dict(ckpt["model_state"])
-
 
 
 def inference_script(
@@ -60,19 +61,19 @@ def inference_script(
         repeat=config.get("test_accuracy_repeat", 30),
     )
     test_acc, score, target, test_confusion, throughput, precision, recall, f1_score = test_result
-    # multicrop_test_acc = check_accuracy_multicrop(
-    #     model=model,
-    #     loader=multicrop_test_loader,
-    #     preprocess=preprocess,
-    #     config=config,
-    #     repeat=config.get("test_accuracy_repeat", 30),
-    # )
+    multicrop_test_acc = check_accuracy_multicrop(
+        model=model,
+        loader=multicrop_test_loader,
+        preprocess=preprocess,
+        config=config,
+        repeat=config.get("test_accuracy_repeat", 30),
+    )
 
     pprint.pprint(
         {
             f"Test Accuracy": test_acc,
             "Confusion Matrix (Array)": test_confusion,
-            # "Multi-Crop Test Accuracy": multicrop_test_acc,
+            "Multi-Crop Test Accuracy": multicrop_test_acc,
             "Precision": precision,
             "Recall": recall,
             "f1 score": f1_score,

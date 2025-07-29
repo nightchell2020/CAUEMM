@@ -13,9 +13,13 @@ def train_multistep(model, loader, preprocess, optimizer, scheduler, amp_scaler,
     if config["eeg_freeze"]:
         for param in model.module.eeg_model.parameters():
             param.requires_grad = False
+    else:
+        pass
     if config["mri_freeze"]:
         for param in model.module.mri_model.parameters():
             param.requires_grad = False
+    else:
+        pass
 
     # init
     i = 0

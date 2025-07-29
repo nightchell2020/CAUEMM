@@ -129,7 +129,6 @@ def load_pretrained_params(model, config):
     mri_ckpt = torch.load(os.path.join(mri_weight, "checkpoint.pth"), map_location=config["device"])["state_dict"]
 
 
-
     if eeg_ckpt["config"]["ddp"] == config["ddp"]:  # Both are DDP
         ckpt = merge_state_dicts(eeg_state, mri_ckpt)
         model.load_state_dict(ckpt, strict=False)

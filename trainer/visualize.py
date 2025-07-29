@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from plotly.tools import mpl_to_plotly
 import wandb
 
+
 from trainer.evaluate import calculate_class_wise_metrics
 
 
@@ -682,3 +683,4 @@ def draw_error_table(error_table, use_wandb=False, fig_size=(40.0, 4.0)):
 
     # fig.clear()
     plt.close(fig)
+

@@ -672,6 +672,8 @@ def compose_preprocess(config, train_loader, verbose=True):
 
         eeg_preprocess_train += [EegSpectrogram(**config["stft_params"])]
         eeg_preprocess_test += [EegSpectrogram(**config["stft_params"])]
+    else:
+        pass
 
     ######################################
     ### data normalization (2D signal) ###

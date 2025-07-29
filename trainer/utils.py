@@ -70,33 +70,33 @@ def edit_MedicalNet_pretrained(state_dict):
     def convert_key(key):
         # conv1 → input_stage.0
         if key.startswith("module.conv1"):
-            return key.replace("module.conv1", "mri_model.input_stage.0")
+            return key.replace("module.conv1", "module.input_stage.0")
         if key.startswith("module.bn1"):
-            return key.replace("module.bn1", "mri_model.input_stage.1")
+            return key.replace("module.bn1", "module.input_stage.1")
 
         # layerX.Y.convZ → conv_stageX.Y.convZ
         m = re.match(r"module\.layer(\d+)\.(\d+)\.conv(\d+)(.*)", key)
         if m:
             x, y, z, tail = m.groups()
-            if x != '4':
-                y = str(int(y) + 1)
-            return f"mri_model.conv_stage{x}.{y}.conv{z}{tail}"
+            # if x != '4':
+            #     y = str(int(y) + 1)
+            return f"module.conv_stage{x}.{y}.conv{z}{tail}"
 
         # layerX.Y.bnZ → conv_stageX.Y.normZ
         m = re.match(r"module\.layer(\d+)\.(\d+)\.bn(\d+)(.*)", key)
         if m:
             x, y, z, tail = m.groups()
-            if x != '4':
-                y = str(int(y) + 1)
-            return f"mri_model.conv_stage{x}.{y}.norm{z}{tail}"
+            # if x != '4':
+            #     y = str(int(y) + 1)
+            return f"module.conv_stage{x}.{y}.norm{z}{tail}"
 
         # layerX.Y.downsample.X → conv_stageX.Y.downsample.X
         m = re.match(r"module\.layer(\d+)\.(\d+)\.downsample\.(\d+)(.*)", key)
         if m:
             x, y, d, tail = m.groups()
-            if x != '4':
-                y = str(int(y) + 1)
-            return f"mri_model.conv_stage{x}.{y}.downsample.{d}{tail}"
+            # if x != '4':
+            #     y = str(int(y) + 1)
+            return f"module.conv_stage{x}.{y}.downsample.{d}{tail}"
         return key
 
     new_state = OrderedDict()
@@ -105,6 +105,44 @@ def edit_MedicalNet_pretrained(state_dict):
         new_state[new_key] = v
     return new_state
 
+# def edit_MedicalNet_pretrained(state_dict):
+#     def convert_key(key):
+#         # conv1 → input_stage.0
+#         if key.startswith("module.conv1"):
+#             return key.replace("module.conv1", "mri_model.input_stage.0")
+#         if key.startswith("module.bn1"):
+#             return key.replace("module.bn1", "mri_model.input_stage.1")
+#
+#         # layerX.Y.convZ → conv_stageX.Y.convZ
+#         m = re.match(r"module\.layer(\d+)\.(\d+)\.conv(\d+)(.*)", key)
+#         if m:
+#             x, y, z, tail = m.groups()
+#             if x != '4':
+#                 y = str(int(y) + 1)
+#             return f"mri_model.conv_stage{x}.{y}.conv{z}{tail}"
+#
+#         # layerX.Y.bnZ → conv_stageX.Y.normZ
+#         m = re.match(r"module\.layer(\d+)\.(\d+)\.bn(\d+)(.*)", key)
+#         if m:
+#             x, y, z, tail = m.groups()
+#             if x != '4':
+#                 y = str(int(y) + 1)
+#             return f"mri_model.conv_stage{x}.{y}.norm{z}{tail}"
+#
+#         # layerX.Y.downsample.X → conv_stageX.Y.downsample.X
+#         m = re.match(r"module\.layer(\d+)\.(\d+)\.downsample\.(\d+)(.*)", key)
+#         if m:
+#             x, y, d, tail = m.groups()
+#             if x != '4':
+#                 y = str(int(y) + 1)
+#             return f"mri_model.conv_stage{x}.{y}.downsample.{d}{tail}"
+#         return key
+#
+#     new_state = OrderedDict()
+#     for k, v in state_dict.items():
+#         new_key = convert_key(k)
+#         new_state[new_key] = v
+#     return new_state
 
 
 def merge_state_dicts(dict1, dict2, overwirte=True):

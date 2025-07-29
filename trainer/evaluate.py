@@ -152,7 +152,8 @@ def logit_to_prob(logit, config):
 
 @torch.no_grad()
 def estimate_class_score(model, sample_batched, preprocess, config):
-    output = compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0, cam=config.get('Medcam', False)) ###
+    # output = compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0, cam=config.get('Medcam', False)) ###
+    output = unimodal_compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0) ###
     output = logit_to_prob(output, config)
     return output
 
@@ -298,7 +299,6 @@ def check_accuracy_extended(model, loader, preprocess, config, repeat=1, dummy=1
     accuracy = confusion_matrix.trace() / confusion_matrix.sum() * 100.0
     throughput = total / total_time
 
-    # Added 250715
     preds = torch.tensor(preds)
     Precision = sklearn.metrics.precision_score(target, preds, average='macro')
     Recall = sklearn.metrics.recall_score(target, preds, average='macro')

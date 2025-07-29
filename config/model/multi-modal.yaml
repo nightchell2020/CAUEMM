@@ -11,7 +11,7 @@ _target_: models.multimodal.EMMNet
 
 ############### MODEL ARCHITECTURE
 
-concat_dim: 128
+concat_dim: 256
 output_length: 2
 fc_stages: 1
 activation: gelu #mish, gelu, relu

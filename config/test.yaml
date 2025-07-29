@@ -1,8 +1,14 @@
 defaults:
   - data: cauemm-abnormal
   - trainer: base_test
-  - model: multi-modal
+  - model: 3D-ResNet-18
   - _self_
+
+#defaults:
+#  - data: cauemm-abnormal
+#  - trainer: base_test
+#  - model: multi-modal
+#  - _self_
 
 hydra:
   run:
