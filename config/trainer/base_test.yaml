@@ -8,7 +8,7 @@ load_pretrained: Exp/nxdmal2i
 
 
 # test option
-test_accuracy_repeat: 100
+test_accuracy_repeat: 1
 Medcam: true
 
 # regularization

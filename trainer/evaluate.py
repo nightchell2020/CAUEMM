@@ -83,8 +83,9 @@ def compute_feature_embedding(model, sample_batched, preprocess, config, target_
     # evaluation mode
     model.eval()
     if cam :
-        model.mri_model = medcam.inject(model.mri_model, output_dir="/home/night/Mycode/EMMnet/attn_maps/",label=1,
-                              layer=['input_stage','conv_stage1', 'conv_stage2'], save_maps=True)
+        model.mri_model = medcam.inject(model.mri_model, output_dir="/home/night/Mycode/EMMnet/attn_maps_abnormal/", label=1,
+                              layer=['conv_stage3','conv_stage4'], save_maps=True)
+                                # layer = 'auto', save_maps = True)
 
     # preprocessing (this includes to-device operation)
     preprocess[0](sample_batched)
@@ -152,8 +153,8 @@ def logit_to_prob(logit, config):
 
 @torch.no_grad()
 def estimate_class_score(model, sample_batched, preprocess, config):
-    # output = compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0, cam=config.get('Medcam', False)) ###
-    output = unimodal_compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0) ###
+    output = compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0, cam=config.get('Medcam', False)) ###
+    # output = unimodal_compute_feature_embedding(model, sample_batched, preprocess, config, target_from_last=0) ###
     output = logit_to_prob(output, config)
     return output
 
@@ -270,6 +271,7 @@ def check_accuracy_extended(model, loader, preprocess, config, repeat=1, dummy=1
 
             y = sample_batched["class_label"]
             serial = sample_batched["serial"]
+            print("serial:", serial)
             serials += serial
             # classification score for drawing ROC curve
             if score is None:

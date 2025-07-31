@@ -20,4 +20,4 @@ fusion: 'concat'  # 'attention'
 mri_freeze: false
 eeg_freeze: true
 
-minibatch_4090: 16
+minibatch_4090: 8
